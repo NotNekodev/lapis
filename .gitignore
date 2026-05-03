@@ -1,0 +1,22 @@
+# dependencies
+limine-binary/
+edk2-ovmf/
+
+# build outputs
+*.iso
+*.hdd
+
+# IDE/editor files
+compile_commands.json
+.cache/
+
+# build artifacts
+build/
+iso_root/
+*.stamp
+
+# kernel dependencies
+kernel/cc-runtime
+kernel/freestnd-c-hdrs
+kernel/limine-protocol
+kernel/.deps-obtained

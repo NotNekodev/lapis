@@ -1,0 +1,2 @@
+option('image_name', type: 'string', value: 'lapis', description: 'Base name for ISO/HDD outputs')
+option('qemu_flags', type: 'string', value: '-m 2G', description: 'Extra flags passed to QEMU')
