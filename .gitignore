@@ -20,3 +20,6 @@ kernel/cc-runtime
 kernel/freestnd-c-hdrs
 kernel/limine-protocol
 kernel/.deps-obtained
+
+# runtime files
+*.log

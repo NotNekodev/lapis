@@ -70,7 +70,11 @@ endif
 sources = files(
   'src/main.c',
   'src/util/memory.c',
+  'src/log/sink.c',
+  'src/log/log.c',
+  'src/log/sinks/e9.c',
   'cc-runtime/src/cc-runtime.c',
+  'src/arch/io.asm',
 )
 
 kernel_bin = executable(

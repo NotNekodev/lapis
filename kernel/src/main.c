@@ -1,3 +1,9 @@
+#include <kernel.h>
+
+#include <arch/io.h>
+#include <log/sinks/e9.h>
+#include <log/log.h>
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -12,18 +18,13 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
-
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
 __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
-static void hcf(void) {
-    for (;;) {
-        __asm__ ("hlt");
-    }
-}
+kernel_info_t kernel_info;
 
 void kmain(void) {
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) {
@@ -35,16 +36,15 @@ void kmain(void) {
         hcf();
     }
 
-    struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
+    kernel_info.framebuffer = framebuffer_request.response->framebuffers[0];
 
-    volatile uint32_t *fb_ptr = framebuffer->address;
-    for (size_t y = 0; y < framebuffer->height; y++) {
-        for (size_t x = 0; x < framebuffer->width; x++) {
-            uint32_t nX = x * 255 / framebuffer->width;
-            uint32_t nY = y * 255 / framebuffer->height;
-            fb_ptr[y * (framebuffer->pitch / 4) + x] = (nY << 8) | nX;
-        }
-    }
+    e9_sink_init();
 
+    debug("Hello, world! This is a debug message.\n");
+    info("Hello, world! This is an info message.\n");
+    warn("Hello, world! This is a warning message.\n");
+    error("Hello, world! This is an error message.\n");
+    critical("Hello, world! This is a critical message.\n");
+    
     hcf();
 }
