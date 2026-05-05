@@ -1,3 +1,4 @@
+#include "arch/gdt/gdt.h"
 #include <kernel.h>
 
 #include <arch/io.h>
@@ -45,6 +46,9 @@ void kmain(void) {
     warn("Hello, world! This is a warning message.\n");
     error("Hello, world! This is an error message.\n");
     critical("Hello, world! This is a critical message.\n");
+
+    gdt_reload();
+    info("GDT init... ok\n");
     
     hcf();
 }

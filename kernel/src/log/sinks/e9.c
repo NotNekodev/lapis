@@ -28,6 +28,5 @@ int e9_sink_init(void) {
     if (id < 0) {
         return -1;
     }
-    e9_sink.id = id;
     return 0;
 }

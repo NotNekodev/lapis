@@ -73,8 +73,10 @@ sources = files(
   'src/log/sink.c',
   'src/log/log.c',
   'src/log/sinks/e9.c',
+  'src/arch/gdt/gdt.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',
+  'src/arch/gdt/gdt.asm',
 )
 
 kernel_bin = executable(
