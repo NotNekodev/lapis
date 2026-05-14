@@ -1,4 +1,5 @@
 #include "arch/gdt/gdt.h"
+#include "arch/interrupts/idt.h"
 #include <kernel.h>
 
 #include <arch/io.h>
@@ -49,6 +50,12 @@ void kmain(void) {
 
     gdt_reload();
     info("GDT init... ok\n");
+
+    idt_setup();
+    idt_reload();
+    info("IDT init... ok\n");
+
+    __asm__ volatile("int $0x3");
     
     hcf();
 }
