@@ -21,7 +21,6 @@ void gdt_reload(void) {
 
     // TODO: ist shenanigans
 
-    // TODO: replace with per cpu gdt struct
     gdtr_t gdtr = {
         .size = sizeof(template) - 1,
         .address = (uint64_t)&get_current_cpu()->gdt

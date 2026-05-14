@@ -1,4 +1,7 @@
+#include "arch/cpu.h"
+#include "arch/interrupts/isr.h"
 #include "arch/io.h"
+#include "stddef.h"
 #include <arch/interrupts/idt.h>
 #include <log/log.h>
 
@@ -39,19 +42,40 @@ void idt_setup(void) {
     }
 }
 
-void idt_reload(void) {
-	idtr_t idtr = {
-		.size = (uint16_t)(sizeof(idt) - 1),
-		.offset = (uint64_t)idt,
-	};
+idtr_t idtr = {
+	.size = (uint16_t)(sizeof(idt) - 1),
+	.offset = (uint64_t)idt,
+};
 
+void exception_isr(isr_t* self, context_t *ctx) {
+	if ((self->id & 0xff) < 19) {
+		error("Exception %d: %s @ %p\n", self->id & 0xff, exceptions[self->id & 0xff], (void *)ctx->rip);
+	} else {
+		error("Exception %d: Unknown @ %p\n", self->id & 0xff, (void *)ctx->rip);
+	}
+}
+
+void idt_reload(void) {
 	_lidt(&idtr);
+
+	for (int i = 0; i < 0x20; i++) {
+		register_interrupt(i, exception_isr, NULL);
+	}	
 
 	_sti();
 }
 
 void interrupt_isr(int vec, context_t *ctx) {
-	debug("Received interrupt: %d\n", vec);
+	isr_t *isr = &get_current_cpu()->isr[vec];
 
-	hcf();
+	if (!isr->handler) {
+		error("Unhandled interrupt %d\n", vec);
+		hcf();
+	}
+
+	isr->handler(isr, ctx); // todo: priority bs
+
+	if (isr->eoi) {
+		isr->eoi(isr);
+	}
 }

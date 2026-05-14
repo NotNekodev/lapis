@@ -27,11 +27,13 @@ typedef struct cpu {
     uint32_t lapic_id; // they should not be different, but they can be? idk qwq
     
     uint64_t gdt[5];
-    isr_t *isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
+    isr_t isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
 } cpu_t;
 
 cpu_t *get_bsp(void);
 
 cpu_t *get_current_cpu(void);
+long get_current_cpuid(void);
+
 
 #endif // _CPU_H

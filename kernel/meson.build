@@ -75,6 +75,7 @@ sources = files(
   'src/log/sinks/e9.c',
   'src/arch/gdt/gdt.c',
   'src/arch/interrupts/idt.c',
+  'src/arch/interrupts/isr.c',
   'src/arch/cpu.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',
