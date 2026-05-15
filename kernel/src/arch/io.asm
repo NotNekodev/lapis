@@ -21,3 +21,8 @@ global _sti
 _sti:
     sti
     ret
+
+global _pause
+_pause:
+    pause
+    ret

@@ -1,5 +1,6 @@
 #include "arch/gdt/gdt.h"
 #include "arch/interrupts/idt.h"
+#include "util/spinlock.h"
 #include <arch/smp.h>
 #include <kernel.h>
 

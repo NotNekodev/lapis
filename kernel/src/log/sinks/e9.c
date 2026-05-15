@@ -1,3 +1,4 @@
+#include "util/spinlock.h"
 #include <log/sinks/e9.h>
 
 #include <arch/io.h>

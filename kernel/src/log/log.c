@@ -24,5 +24,9 @@ void log(int level, const char *format, ...) {
     int len = npf_vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    log_to_sinks(buffer, (size_t)len, level);
+    if (level == LOG_LEVEL_CRITICAL) {
+        log_to_sinks_unlocked(buffer, len, level);
+    } else {
+        log_to_sinks(buffer, len, level);
+    }
 }

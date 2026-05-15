@@ -70,6 +70,7 @@ endif
 sources = files(
   'src/main.c',
   'src/util/memory.c',
+  'src/util/spinlock.c',
   'src/log/sink.c',
   'src/log/log.c',
   'src/log/sinks/e9.c',

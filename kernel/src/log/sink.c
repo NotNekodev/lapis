@@ -1,9 +1,12 @@
+#include "util/spinlock.h"
 #include <log/sink.h>
 
 #include <util/memory.h>
 
 static int id_counter = 0;
 log_sink_t *sinks_head = NULL;
+
+spinlock_t output_lock = SPINLOCK_INIT("sink_output_lock");
 
 int register_sink(log_sink_t *sink) { // returns the id of the registered sink, or -1 on failure
     if (sink == NULL || sink->write == NULL || sink->flush == NULL) {
@@ -53,6 +56,12 @@ void unregister_sink(int id) {
 }
 
 void log_to_sinks(const char *data, size_t len, int level) {
+    spinlock_acquire(&output_lock);
+    log_to_sinks_unlocked(data, len, level);
+    spinlock_release(&output_lock);
+}
+
+void log_to_sinks_unlocked(const char *data, size_t len, int level) {
     log_sink_t *current = sinks_head;
 
     while (current != NULL) {

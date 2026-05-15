@@ -6,6 +6,7 @@
 void _hlt(void);
 void _sti(void);
 void _cli(void);
+void _pause(void);
 
 void _outb(uint16_t port, uint8_t value);
 
