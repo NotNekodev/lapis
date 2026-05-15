@@ -77,6 +77,7 @@ sources = files(
   'src/arch/interrupts/idt.c',
   'src/arch/interrupts/isr.c',
   'src/arch/cpu.c',
+  'src/arch/smp.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',
   'src/arch/gdt/gdt.asm',

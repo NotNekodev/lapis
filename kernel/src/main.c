@@ -1,5 +1,6 @@
 #include "arch/gdt/gdt.h"
 #include "arch/interrupts/idt.h"
+#include <arch/smp.h>
 #include <kernel.h>
 
 #include <arch/io.h>
@@ -29,7 +30,6 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
 kernel_info_t kernel_info;
-static cpu_t bsp_cpu;
 
 void kmain(void) {
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) {
@@ -45,7 +45,7 @@ void kmain(void) {
 
     e9_sink_init();
 
-    cpu_set_current(get_bsp());
+    smp_prepare();
 
     debug("Hello, world! This is a debug message.\n");
     info("Hello, world! This is an info message.\n");
@@ -60,11 +60,10 @@ void kmain(void) {
     idt_reload();
     info("IDT init... ok\n");
 
+    smp_start_aps();
+
     __asm__ volatile("int $0x3");
     
     hcf();
 }
 
-cpu_t *get_bsp(void) {
-    return &bsp_cpu;
-}

@@ -1,2 +1,2 @@
 option('image_name', type: 'string', value: 'lapis', description: 'Base name for ISO/HDD outputs')
-option('qemu_flags', type: 'string', value: '-m 2G -debugcon stdio -D qemu.log -d int,cpu_reset -no-reboot -no-shutdown ', description: 'Extra flags passed to QEMU')
+option('qemu_flags', type: 'string', value: '-m 2G -debugcon stdio -D qemu.log -d int,cpu_reset -no-reboot -no-shutdown -smp 4', description: 'Extra flags passed to QEMU')
