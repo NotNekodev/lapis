@@ -45,6 +45,8 @@ void kmain(void) {
 
     e9_sink_init();
 
+    cpu_set_current(get_bsp());
+
     debug("Hello, world! This is a debug message.\n");
     info("Hello, world! This is an info message.\n");
     warn("Hello, world! This is a warning message.\n");

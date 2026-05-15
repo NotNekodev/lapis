@@ -23,15 +23,17 @@ typedef struct ist {
 } __attribute__((packed)) ist_t;
 
 typedef struct cpu {
-    uint32_t id;
-    uint32_t lapic_id; // they should not be different, but they can be? idk qwq
+	struct cpu *self;
+	uint32_t id;
+	uint32_t lapic_id; // they should not be different, but they can be? idk qwq
     
-    uint64_t gdt[5];
-    isr_t isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
+	uint64_t gdt[5];
+	isr_t isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
 } cpu_t;
 
 cpu_t *get_bsp(void);
 
+void cpu_set_current(cpu_t *cpu);
 cpu_t *get_current_cpu(void);
 long get_current_cpuid(void);
 
