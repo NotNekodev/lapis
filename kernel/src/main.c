@@ -1,6 +1,7 @@
 #include "arch/gdt/gdt.h"
 #include "arch/interrupts/idt.h"
-#include "util/spinlock.h"
+#include "mm/pfn_db.h"
+#include "mm/pmm.h"
 #include <arch/smp.h>
 #include <kernel.h>
 
@@ -24,6 +25,18 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST_ID,
+    .revision = 0
+};
+
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
@@ -43,6 +56,8 @@ void kmain(void) {
     }
 
     kernel_info.framebuffer = framebuffer_request.response->framebuffers[0];
+    kernel_info.hhdm_offset = hhdm_request.response->offset;
+    kernel_info.memmap = memmap_request.response;
 
     e9_sink_init();
 
@@ -62,6 +77,13 @@ void kmain(void) {
     info("IDT init... ok\n");
 
     smp_start_aps();
+
+    pfn_db_init(kernel_info.memmap);
+    pfn_db_dump();
+
+    pmm_init();
+    pmm_dump_stats();
+    pmm_stress_test();
 
     __asm__ volatile("int $0x3");
     
