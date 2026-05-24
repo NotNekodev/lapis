@@ -26,7 +26,7 @@ static volatile uint32_t cpu_started_count;
 static void ap_entry(struct limine_mp_info *info) {
     cpu_t *cpu = (cpu_t *)(uintptr_t)info->extra_argument;
     cpu_set_current(cpu);
-    debug("Launched AP %u\n", cpu->id);
+    debug("smp: launched AP %u\n", cpu->id);
     gdt_reload();
     idt_reload();
     __atomic_add_fetch(&cpu_started_count, 1, __ATOMIC_SEQ_CST);

@@ -3,6 +3,7 @@
 #include "mm/page.h"
 #include "stddef.h"
 #include <mm/pfn_db.h>
+#include <limine.h>
 
 static page_t *mem_map;
 static uint64_t max_pfn;

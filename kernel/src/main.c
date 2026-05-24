@@ -2,6 +2,8 @@
 #include "arch/interrupts/idt.h"
 #include "mm/pfn_db.h"
 #include "mm/pmm.h"
+#include "mm/kheap.h"
+#include "mm/paging.h"
 #include <arch/smp.h>
 #include <kernel.h>
 
@@ -37,6 +39,12 @@ static volatile struct limine_memmap_request memmap_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_executable_address_request executable_address_request = {
+    .id = LIMINE_EXECUTABLE_ADDRESS_REQUEST_ID,
+    .revision = 0
+};
+
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
@@ -46,6 +54,8 @@ static volatile uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARK
 kernel_info_t kernel_info;
 
 void kmain(void) {
+    __asm__ volatile("movq %%rsp, %0" : "=r"(kernel_info.kstack_top));
+
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) {
         hcf();
     }
@@ -58,23 +68,17 @@ void kmain(void) {
     kernel_info.framebuffer = framebuffer_request.response->framebuffers[0];
     kernel_info.hhdm_offset = hhdm_request.response->offset;
     kernel_info.memmap = memmap_request.response;
+    kernel_info.kaddr_virt = executable_address_request.response->virtual_base;
+    kernel_info.kaddr_phys = executable_address_request.response->physical_base;
 
     e9_sink_init();
 
     smp_prepare();
 
-    debug("Hello, world! This is a debug message.\n");
-    info("Hello, world! This is an info message.\n");
-    warn("Hello, world! This is a warning message.\n");
-    error("Hello, world! This is an error message.\n");
-    critical("Hello, world! This is a critical message.\n");
-
     gdt_reload();
-    info("GDT init... ok\n");
 
     idt_setup();
     idt_reload();
-    info("IDT init... ok\n");
 
     smp_start_aps();
 
@@ -83,10 +87,11 @@ void kmain(void) {
 
     pmm_init();
     pmm_dump_stats();
-    pmm_stress_test();
+
+    kheap_init();
+    paging_init();
 
     __asm__ volatile("int $0x3");
     
     hcf();
 }
-

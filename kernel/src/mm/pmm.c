@@ -236,7 +236,7 @@ void pmm_stress_test(void) {
         uint64_t phys = pfn_db_page_to_phys(list);
         uint64_t *ptr = (uint64_t *)PHYS_TO_VIRT(phys);
         uint64_t index = allocated - 1;
-        uint64_t pattern = 0xdeadbeefcafebabeULL ^ index;
+        uint64_t pattern = 0xdeadbeefcafebabe ^ index;
         if (ptr[0] != pattern || ptr[(PAGE_SIZE / sizeof(uint64_t)) - 1] != ~pattern) {
             error("pmm: stress data mismatch pfn=%llu\n", pfn_db_getpfn(list));
         }

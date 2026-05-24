@@ -30,11 +30,16 @@ typedef struct page {
 #define PHYS_TO_VIRT(p) ((void *)((uint64_t)(p) + kernel_info.hhdm_offset))
 #define VIRT_TO_PHYS(p) ((uint64_t)(p) - kernel_info.hhdm_offset)
 
-#define is_page_free(p) ((p)->flags & PAGE_FREE)
-#define is_page_allocated(p) ((p)->flags & PAGE_ALLOCATED)
-#define is_page_reserved(p) ((p)->flags & PAGE_RESERVED)
-#define is_page_shared(p) ((p)->flags & PAGE_SHARED)
-#define is_page_cow(p) ((p)->flags & PAGE_COW)
-#define is_page_dirty(p) ((p)->flags & PAGE_DIRTY)
+#define is_page_free(p)         ((p)->flags & PAGE_FREE)
+#define is_page_allocated(p)    ((p)->flags & PAGE_ALLOCATED)
+#define is_page_reserved(p)     ((p)->flags & PAGE_RESERVED)
+#define is_page_shared(p)       ((p)->flags & PAGE_SHARED)
+#define is_page_cow(p)          ((p)->flags & PAGE_COW)
+#define is_page_dirty(p)        ((p)->flags & PAGE_DIRTY)
+
+#define DIV_ROUND_UP(x, y)  (((uint64_t)(x) + ((uint64_t)(y) - 1)) / (uint64_t)(y))
+#define ALIGN_UP(x, y)      (DIV_ROUND_UP(x, y) * (uint64_t)(y))
+#define ALIGN_DOWN(x, y)    (((uint64_t)(x) / (uint64_t)(y)) * (uint64_t)(y))
+
 
 #endif // _PAGE_H

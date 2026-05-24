@@ -1,4 +1,5 @@
 #include "arch/cpu.h"
+#include "log/log.h"
 #include <arch/gdt/gdt.h>
 
 #include <util/memory.h>
@@ -28,4 +29,6 @@ void gdt_reload(void) {
 
     _lgdt(&gdtr);
     _reload_segs();
+
+    info("gdt (%u): reloaded GDT with %d entries, GDTR at 0x%.16llx\n", get_current_cpu()->id, sizeof(template) / sizeof(template[0]), (uint64_t)&gdtr);
 }   

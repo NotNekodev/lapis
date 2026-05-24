@@ -1,7 +1,7 @@
-#include "mm/page.h"
 #ifndef _PMM_H
 #define _PMM_H 1
 
+#include <mm/page.h>
 
 void pmm_init(void);
 

@@ -75,6 +75,8 @@ sources = files(
   'src/log/log.c',
   'src/log/sinks/e9.c',
   'src/mm/pmm.c',
+  'src/mm/paging.c',
+  'src/mm/kheap.c',
   'src/arch/gdt/gdt.c',
   'src/arch/interrupts/idt.c',
   'src/arch/interrupts/isr.c',

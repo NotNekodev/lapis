@@ -63,6 +63,8 @@ void idt_reload(void) {
 	}	
 
 	_sti();
+
+	info("idt (%u): loaded IDT with %d entries, IDTR at 0x%.16llx\n", get_current_cpu()->id, sizeof(idt) / sizeof(idt[0]), (uint64_t)&idtr);
 }
 
 void interrupt_isr(int vec, context_t *ctx) {
