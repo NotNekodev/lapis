@@ -6,7 +6,9 @@
 #include "log/log.h"
 #include "mm/page.h"
 #include "mm/pfn_db.h"
+#include "mm/vmm.h"
 #include "stddef.h"
+#include "util/errno.h"
 #include "util/spinlock.h"
 #include <mm/kheap.h>
 
@@ -525,4 +527,17 @@ void paging_init(void) {
     __asm__ volatile("mov %0, %%cr3" ::"r"(kernel_info.kernel_pt) : "memory");
 
     info("paging: initialized kernel page table at paddr=0x%.16llx\n", VIRT_TO_PHYS(kernel_info.kernel_pt));
+}
+
+void pf_handler(isr_t *self, context_t *ctx) {
+    (void)self;
+
+    vmm_t* fault_vmm = vmm_current(); // TODO: is this the correct way to get the faulting VMM? maybe once we have a scheduler we need to get the VMM from the faulting thread's context instead?
+    vaddr_t fault_addr = ctx->cr2;
+    uint64_t error_code = ctx->error;
+
+    if (vmm_pf_handler(fault_vmm, fault_addr, error_code) != EOK) {
+        critical("paging: unhandled page fault at addr=0x%zx with error_code=0x%lx\n", fault_addr, error_code);
+        hcf();
+    }
 }

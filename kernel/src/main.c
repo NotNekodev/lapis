@@ -1,5 +1,6 @@
 #include "arch/gdt/gdt.h"
 #include "arch/interrupts/idt.h"
+#include "arch/interrupts/isr.h"
 #include "mm/pfn_db.h"
 #include "mm/pmm.h"
 #include "mm/kheap.h"
@@ -91,7 +92,12 @@ void kmain(void) {
     kheap_init();
     paging_init();
 
-    __asm__ volatile("int $0x3");
+    vmm_t *kvm = vmm_create_from_pml4(kernel_info.kernel_pt);
+    vmm_set_kernel(kvm);
+
+    register_interrupt(0xE, pf_handler, NULL);
+
+    vmm_dump(vmm_current());
     
     hcf();
 }
