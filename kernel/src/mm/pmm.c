@@ -1,8 +1,10 @@
 #include <mm/pmm.h>
 
-#include <log/log.h>
 #include <mm/pfn_db.h>
 #include <mm/page.h>
+
+#include <log/log.h>
+
 #include <stddef.h>
 #include <stdint.h>
 

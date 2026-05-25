@@ -1,8 +1,9 @@
-#include "log/log.h"
 #include <log/sinks/e9.h>
 
 #include <arch/io.h>
+
 #include <log/sink.h>
+#include <log/log.h>
 
 log_sink_t e9_sink = {
     .id = -1,

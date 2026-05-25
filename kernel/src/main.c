@@ -1,14 +1,17 @@
-#include "arch/gdt/gdt.h"
-#include "arch/interrupts/idt.h"
-#include "arch/interrupts/isr.h"
-#include "mm/pfn_db.h"
-#include "mm/pmm.h"
-#include "mm/kheap.h"
-#include "mm/paging.h"
+#include <arch/gdt/gdt.h>
+#include <arch/interrupts/idt.h>
+#include <arch/interrupts/isr.h>
+#include <arch/io.h>
+#include <arch/cpu.h>
 #include <arch/smp.h>
+
+#include <mm/pfn_db.h>
+#include <mm/pmm.h>
+#include <mm/kheap.h>
+#include <mm/paging.h>
+
 #include <kernel.h>
 
-#include <arch/io.h>
 #include <log/sinks/e9.h>
 #include <log/log.h>
 
@@ -16,8 +19,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <limine.h>
-
-#include <arch/cpu.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);

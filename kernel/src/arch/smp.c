@@ -1,10 +1,12 @@
-#include "log/log.h"
 #include <arch/smp.h>
 
 #include <arch/cpu.h>
 #include <arch/gdt/gdt.h>
 #include <arch/interrupts/idt.h>
 #include <arch/io.h>
+
+#include <log/log.h>
+
 #include <limine.h>
 #include <stdint.h>
 #include <stddef.h>

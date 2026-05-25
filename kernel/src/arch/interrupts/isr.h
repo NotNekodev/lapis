@@ -1,5 +1,5 @@
 #ifndef _ISR_H
-#define _ISR_H
+#define _ISR_H 1
 
 #include <arch/io.h>
 

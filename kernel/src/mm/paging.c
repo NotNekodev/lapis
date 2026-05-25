@@ -1,16 +1,20 @@
-#include "paging.h"
+#include <mm/paging.h>
+
 #include <mm/pmm.h>
-#include <stdint.h>
-#include <util/memory.h>
-#include "kernel.h"
-#include "log/log.h"
-#include "mm/page.h"
-#include "mm/pfn_db.h"
-#include "mm/vmm.h"
-#include "stddef.h"
-#include "util/errno.h"
-#include "util/spinlock.h"
+#include <mm/page.h>
+#include <mm/pfn_db.h>
+#include <mm/vmm.h>
 #include <mm/kheap.h>
+
+#include <log/log.h>
+#include <kernel.h>
+
+#include <util/memory.h>
+#include <util/errno.h>
+#include <util/spinlock.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 extern char __limine_requests_start[];
 extern char __limine_requests_end[];

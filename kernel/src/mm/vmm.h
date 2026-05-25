@@ -1,10 +1,10 @@
 #ifndef _VMM_H
 #define _VMM_H 1
 
+#include <util/rbtree.h>
+
 #include <stdint.h>
 #include <stddef.h>
-
-#include <util/rbtree.h>
 
 #define VFLAG_PRESENT       (1 << 0)
 #define VFLAG_WRITABLE      (1 << 1)

@@ -1,6 +1,7 @@
 #include <log/log.h>
 
 #include <log/sink.h>
+#include <stdarg.h>
 
 #define NANOPRINTF_USE_FIELD_WIDTH_FORMAT_SPECIFIERS     1
 #define NANOPRINTF_USE_PRECISION_FORMAT_SPECIFIERS       1
@@ -14,7 +15,6 @@
 #define NANOPRINTF_IMPLEMENTATION
 #include <log/nanoprintf.h>
 
-#include <stdarg.h>
 
 void log(int level, const char *format, ...) {
     char buffer[1024];

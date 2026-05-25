@@ -1,6 +1,7 @@
-#include "arch/cpu.h"
-#include "log/log.h"
 #include <util/spinlock.h>
+
+#include <arch/cpu.h>
+#include <log/log.h>
 
 void spinlock_acquire(spinlock_t *lock) {
     long me = get_current_cpuid();

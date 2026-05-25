@@ -1,5 +1,5 @@
 #ifndef _E9_SINK_H
-#define _E9_SINK_H
+#define _E9_SINK_H 1
 
 #include <log/sink.h>
 

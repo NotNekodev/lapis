@@ -1,9 +1,12 @@
-#include "arch/cpu.h"
-#include "arch/interrupts/isr.h"
-#include "arch/io.h"
-#include "stddef.h"
 #include <arch/interrupts/idt.h>
+
+#include <arch/cpu.h>
+#include <arch/interrupts/isr.h>
+#include <arch/io.h>
+
 #include <log/log.h>
+
+#include <stddef.h>
 
 static char *exceptions[] = {
 	"Division by 0",

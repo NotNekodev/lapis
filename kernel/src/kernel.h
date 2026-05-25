@@ -1,9 +1,9 @@
-
 #ifndef _KERNEL_H
 #define _KERNEL_H 1
 
 #include <stdint.h>
-#include "mm/vmm.h"
+
+#include <mm/vmm.h>
 
 #define KSTACK_SIZE 64 * 0x1000
 

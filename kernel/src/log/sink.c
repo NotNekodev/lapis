@@ -1,6 +1,6 @@
-#include "util/spinlock.h"
 #include <log/sink.h>
 
+#include <util/spinlock.h>
 #include <util/memory.h>
 
 static int id_counter = 0;

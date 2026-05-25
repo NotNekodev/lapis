@@ -1,8 +1,8 @@
 #ifndef _PAGE_H
-#define _PAGE_H
+#define _PAGE_H 1
 
-#include <stdint.h>
 #include <kernel.h>
+#include <stdint.h>
 
 #define PAGE_SIZE 0x1000
 

@@ -1,8 +1,10 @@
-#include "arch/interrupts/isr.h"
-#include "mm/page.h"
-#include <stdint.h>
 #ifndef _PAGING_H
 #define _PAGING_H 1
+
+#include <arch/interrupts/isr.h>
+#include <mm/page.h>
+
+#include <stdint.h>
 
 typedef uint64_t pte_t;
 

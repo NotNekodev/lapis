@@ -1,6 +1,7 @@
+#include <util/memory.h>
+
 #include <stdint.h>
 #include <stddef.h>
-#include <util/memory.h>
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     uint8_t *restrict pdest = dest;

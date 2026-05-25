@@ -3,8 +3,10 @@
 #include <mm/page.h>
 #include <mm/pmm.h>
 #include <mm/pfn_db.h>
+
 #include <util/memory.h>
 #include <util/spinlock.h>
+
 #include <log/log.h>
 
 #define KHEAP_ALIGN 16u

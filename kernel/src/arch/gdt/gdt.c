@@ -1,9 +1,9 @@
-#include "arch/cpu.h"
-#include "log/log.h"
 #include <arch/gdt/gdt.h>
 
-#include <util/memory.h>
+#include <arch/cpu.h>
 
+#include <log/log.h>
+#include <util/memory.h>
 #include <stdint.h>
 
 // https://github.com/Mathewnd/Astral/blob/rewrite/kernel-src/arch/x86-64/gdt.c#L8

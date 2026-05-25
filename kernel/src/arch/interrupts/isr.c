@@ -1,6 +1,8 @@
-#include "arch/cpu.h"
-#include "stddef.h"
 #include <arch/interrupts/isr.h>
+
+#include <arch/cpu.h>
+
+#include <stddef.h>
 
 void register_interrupt(int vector, void (*func)(isr_t *self, context_t *ctx), void (*eoi)(isr_t *self)) {
     isr_t *isr = &get_current_cpu()->isr[vector];

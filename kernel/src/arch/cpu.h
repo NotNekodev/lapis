@@ -1,7 +1,7 @@
 #ifndef _CPU_H
-#define _CPU_H
+#define _CPU_H 1
 
-#include "arch/interrupts/isr.h"
+#include <arch/interrupts/isr.h>
 #include <stdint.h>
 
 // TODO: do something with this qwq
