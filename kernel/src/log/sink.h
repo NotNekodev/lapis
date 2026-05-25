@@ -15,7 +15,7 @@ typedef struct log_sink {
 
     char name[32]; // readable identifier
 
-    void (*write)(const char *data, size_t len);
+    void (*write)(const char *data, size_t len, int level);
     void (*flush)(void);
 
     void* private;

@@ -66,7 +66,7 @@ void log_to_sinks_unlocked(const char *data, size_t len, int level) {
 
     while (current != NULL) {
         if ((current->level_mask & (1 << level)) != 0) {
-            current->write(data, len);
+            current->write(data, len, level);
         }
         current = current->next;
     }
