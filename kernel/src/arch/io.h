@@ -8,7 +8,16 @@ void _sti(void);
 void _cli(void);
 void _pause(void);
 
+uint64_t _get_rflags(void);
+void _set_rflags(uint64_t rflags);
+
 void _outb(uint16_t port, uint8_t value);
+void _outw(uint16_t port, uint16_t value);
+void _outd(uint16_t port, uint32_t value);
+
+uint8_t _inb(uint16_t port);
+uint16_t _inw(uint16_t port);
+uint32_t _ind(uint16_t port);
 
 #define hcf() do { \
     _cli(); \

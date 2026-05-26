@@ -33,6 +33,7 @@ typedef uint64_t pte_t;
 
 void map_page(pte_t *pt, uint64_t vaddr, page_t *page, uint64_t flags);
 void map_paddr(pte_t *pt, uint64_t vaddr, uint64_t paddr, uint64_t flags);
+void map_paddr_range(pte_t *pt, uint64_t vaddr, uint64_t paddr, uint64_t pnum, uint64_t flags);
 void map_mmio(pte_t *pt, uint64_t vaddr, uint64_t paddr, uint64_t npages);
 
 void unmap_page(pte_t *pt, uint64_t vaddr);

@@ -21,5 +21,8 @@ kernel/freestnd-c-hdrs
 kernel/limine-protocol
 kernel/.deps-obtained
 
+subprojects/uacpi/*
+subprojects/.wraplock
+
 # runtime files
 *.log

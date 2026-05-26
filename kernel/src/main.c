@@ -1,3 +1,4 @@
+#include "uacpi/uacpi.h"
 #include <arch/gdt/gdt.h>
 #include <arch/interrupts/idt.h>
 #include <arch/interrupts/isr.h>
@@ -47,6 +48,12 @@ static volatile struct limine_executable_address_request executable_address_requ
     .revision = 0
 };
 
+__attribute((used, section(".limine_requests")))
+static volatile struct limine_rsdp_request rsdp_request = {
+    .id = LIMINE_RSDP_REQUEST_ID,
+    .revision = 0
+};
+
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
@@ -72,6 +79,7 @@ void kmain(void) {
     kernel_info.memmap = memmap_request.response;
     kernel_info.kaddr_virt = executable_address_request.response->virtual_base;
     kernel_info.kaddr_phys = executable_address_request.response->physical_base;
+    kernel_info.rsdp_addr = (uint64_t)(uintptr_t)rsdp_request.response->address;
 
     e9_sink_init();
 
@@ -99,6 +107,11 @@ void kmain(void) {
     register_interrupt(0xE, pf_handler, NULL);
 
     vmm_dump(vmm_current());
+
+    if (uacpi_initialize(0) != UACPI_STATUS_OK) {
+        critical("acpi: failed to initialize ACPI subsystem\n");
+        hcf();
+    }
     
     hcf();
 }

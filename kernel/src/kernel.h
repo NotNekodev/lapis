@@ -19,6 +19,8 @@ typedef struct kernel_info {
     uint64_t kstack_top;
     uint64_t kaddr_virt;
     uint64_t kaddr_phys;
+
+    uint64_t rsdp_addr;
 } kernel_info_t;
 
 extern kernel_info_t kernel_info;

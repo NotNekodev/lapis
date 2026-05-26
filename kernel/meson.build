@@ -84,6 +84,7 @@ sources = files(
   'src/arch/interrupts/isr.c',
   'src/arch/cpu.c',
   'src/arch/smp.c',
+  'src/acpi/uacpi_wrappers.c',
   'src/mm/pfn_db.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',
@@ -91,10 +92,18 @@ sources = files(
   'src/arch/interrupts/idt.asm',
 )
 
+# uacpi
+uacpi = subproject('uacpi')
+
+uacpi_sources = uacpi.get_variable('sources')
+uacpi_includes = uacpi.get_variable('includes')
+
+sources += uacpi_sources
+
 kernel_bin = executable(
   'lapis',
   sources,
-  include_directories: inc,
+  include_directories: [inc, uacpi_includes],
   c_args: c_args,
   nasm_args: nasm_args,
   link_args: link_args,

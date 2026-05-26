@@ -76,7 +76,7 @@ static uint64_t _alloc_pte(void) {
 static void _free_pte(uint64_t phys) {
     page_t *page = pfn_db_phys_to_page(phys);
     if (!page) {
-        critical("paging: invalid page to free paddr=%#018llx\n", phys);
+        critical("paging: invalid page to free paddr=%.16llx\n", phys);
         return;
     }
 
@@ -133,7 +133,7 @@ static void _pte_free_level(uint64_t *table, uint64_t depth) {
             uint64_t phys = entry & PAGE_FRAME_MASK;
             page_t *page = pfn_db_phys_to_page(phys);
             if (!page) {
-                warn("paging: invalid page to free paddr=%#018llx\n", phys);
+                warn("paging: invalid page to free paddr=%.16llx\n", phys);
                 continue;
             }
 
@@ -242,7 +242,7 @@ void map_page(pte_t *pt, uintptr_t vaddr, page_t* page, uint64_t flags) {
     }
 
     if (*entry & PFLAG_PRESENT) {
-        warn("paging: mapping page to vaddr=%#018llx which is already mapped, overwriting\n", vaddr);
+        warn("paging: mapping page to vaddr=%.16llx which is already mapped, overwriting\n", vaddr);
 
         uint64_t old_phys = *entry & PAGE_FRAME_MASK;
         page_t *old_page = pfn_db_phys_to_page(old_phys);
@@ -251,7 +251,7 @@ void map_page(pte_t *pt, uintptr_t vaddr, page_t* page, uint64_t flags) {
             pmm_page_unshare(old_page);
             pmm_page_release(old_page);
         } else {
-            warn("paging: invalid page to free paddr=%#018llx\n", old_phys);
+            warn("paging: invalid page to free paddr=%.16llx\n", old_phys);
         }
     }
 
@@ -289,7 +289,7 @@ void map_paddr(pte_t *pt, uintptr_t vaddr, uint64_t paddr, uint64_t flags) {
     }
 
     if (*entry & PFLAG_PRESENT) {
-        warn("paging: mapping physical address to vaddr=%#018llx which is already mapped, overwriting\n", vaddr);
+        warn("paging: mapping physical address to vaddr=%.16llx which is already mapped, overwriting\n", vaddr);
 
         uint64_t old_phys = *entry & PAGE_FRAME_MASK;
         page_t *old_page = pfn_db_phys_to_page(old_phys);
@@ -298,7 +298,7 @@ void map_paddr(pte_t *pt, uintptr_t vaddr, uint64_t paddr, uint64_t flags) {
             pmm_page_unshare(old_page);
             pmm_page_release(old_page);
         } else {
-            warn("paging: invalid page to free paddr=%#018llx\n", old_phys);
+            warn("paging: invalid page to free paddr=%.16llx\n", old_phys);
         }
     }
 
@@ -307,6 +307,17 @@ void map_paddr(pte_t *pt, uintptr_t vaddr, uint64_t paddr, uint64_t flags) {
     __asm__ volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 
     spinlock_release(&paging_lock);
+}
+
+void map_paddr_range(pte_t *pt, uint64_t vaddr, uint64_t paddr, uint64_t pnum, uint64_t flags) {
+    if (!pt) {
+        critical("paging: cannot map physical address range, page table is NULL\n");
+        return;
+    }
+
+    for (uint64_t i = 0; i < pnum; i++) {
+        map_paddr(pt, vaddr + (i * PAGE_SIZE), paddr + (i * PAGE_SIZE), flags);
+    }
 }
 
 void unmap_page(pte_t *pt, uint64_t vaddr)  {
@@ -323,7 +334,7 @@ void unmap_page(pte_t *pt, uint64_t vaddr)  {
     uint64_t *entry = _leaf_entry(pml4, vaddr, 0);
 
     if (!entry || !(*entry & PFLAG_PRESENT)) {
-        warn("paging: cannot unmap page at vaddr=%#018llx, not mapped\n", vaddr);
+        warn("paging: cannot unmap page at vaddr=%.16llx, not mapped\n", vaddr);
         spinlock_release(&paging_lock);
         return;
     }
@@ -331,7 +342,7 @@ void unmap_page(pte_t *pt, uint64_t vaddr)  {
     uint64_t phys = *entry & PAGE_FRAME_MASK;
     page_t *page = pfn_db_phys_to_page(phys);
     if (!page) {
-        warn("paging: invalid page to free paddr=%#018llx\n", phys);
+        warn("paging: invalid page to free paddr=%.16llx\n", phys);
     } else {
         pmm_page_unshare(page);
         pmm_page_release(page);
@@ -541,7 +552,7 @@ void pf_handler(isr_t *self, context_t *ctx) {
     uint64_t error_code = ctx->error;
 
     if (vmm_pf_handler(fault_vmm, fault_addr, error_code) != EOK) {
-        critical("paging: unhandled page fault at addr=0x%zx with error_code=0x%lx\n", fault_addr, error_code);
+        critical("paging: unhandled page fault at ip=%.16llx with addr=0x%zx with error_code=0x%lx\n", ctx->rip, fault_addr, error_code);
         hcf();
     }
 }

@@ -610,7 +610,9 @@ int vmm_pf_handler(vmm_t *vmm, vaddr_t fault_addr, uint64_t error_code) {
 
         uint64_t phys = pfn_db_page_to_phys(page);
         memset(PHYS_TO_VIRT(phys), 0, PAGE_SIZE);
-
+        
+        map_page(vmm->pml4, fault_page, page, _vflags_to_pflags(vma->flags));
+        return EOK;
     }
 
     if (is_write && (error_code & PF_PRESENT)) {

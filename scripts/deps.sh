@@ -45,6 +45,19 @@ clone_repo_commit \
     limine-protocol \
     80ef54bed402b8c0b672a707c1df4c532f3428ad
 
+# we use the submodules in git for uacpi because of meson and how it does things in which order
+# clone_repo_commit \
+#     https://github.com/uACPI/uACPI.git \
+#     uacpi \
+#     71f981d4ee36bf3ae85976409734000578b5249c
+#
+# cd "$rootdir"
+#
+# mkdir -p subprojects
+# ln -sfn ../kernel/uacpi subprojects/uacpi
+#
+# cd "$rootdir/kernel"
+
 touch .deps-obtained
 
 printf "\nDependencies obtained successfully.\n"
