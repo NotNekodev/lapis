@@ -1,3 +1,5 @@
+#include "uacpi/event.h"
+#include "uacpi/status.h"
 #include "uacpi/uacpi.h"
 #include <arch/gdt/gdt.h>
 #include <arch/interrupts/idt.h>
@@ -108,10 +110,30 @@ void kmain(void) {
 
     vmm_dump(vmm_current());
 
-    if (uacpi_initialize(0) != UACPI_STATUS_OK) {
-        critical("acpi: failed to initialize ACPI subsystem\n");
+    uacpi_status ret = uacpi_initialize(0);
+    if (uacpi_unlikely_error(ret)) {
+        critical("acpi: initial initialization of uACPI failed: %s\n", uacpi_status_to_string(ret));
         hcf();
     }
-    
+
+    ret = uacpi_namespace_load();
+    if (uacpi_unlikely_error(ret)) {
+        critical("acpi: acpi namespace initialization failed: %s\n", uacpi_status_to_string(ret));
+    }
+
+    ret = uacpi_namespace_initialize();
+    if (uacpi_unlikely_error(ret)) {
+        critical("acpi: acpi namespace initialization failed: %s\n", uacpi_status_to_string(ret));
+        hcf();
+    }
+
+    ret = uacpi_finalize_gpe_initialization();
+    if (uacpi_unlikely_error(ret)) {
+        critical("acpi: failed to finalize GPE initialization: %s\n", uacpi_status_to_string(ret));
+        hcf();
+    }
+
+    info("acpi: initialization complete\n");
+
     hcf();
 }
