@@ -9,6 +9,7 @@
 #include "uacpi/status.h"
 #include "uacpi/types.h"
 #include <uacpi/kernel_api.h>
+#include "util/semaphore.h"
 #include "util/spinlock.h"
 #include <log/nanoprintf.h>
 
@@ -381,12 +382,10 @@ void uacpi_kernel_free_mutex(uacpi_handle mutex) {
     kfree(mutex);
 }
 
-typedef struct {
-    bool lock;
-} semaphore_t;
 
 uacpi_handle uacpi_kernel_create_event(void) {
     semaphore_t *semaphore = kmalloc(sizeof(semaphore_t));
+    semaphore_init(semaphore, 0);
 
     return (uacpi_handle)semaphore;
 }
@@ -419,17 +418,29 @@ void uacpi_kernel_release_mutex(uacpi_handle spinlock) {
 }
 
 uacpi_bool uacpi_kernel_wait_for_event(uacpi_handle semaphore, uacpi_u16 timeout) {
-    (void)timeout;
-
     semaphore_t *sem = (semaphore_t *)semaphore;
-    if (!sem) {
-        return UACPI_FALSE;
+
+    switch (timeout) {
+    case 0xFFFF:
+        for (;;) {
+            if (semaphore_try_wait(sem)) {
+                return UACPI_TRUE;
+            }
+            _pause(); // TODO: replace this with an actual sleep function
+        }
+        break;
+
+    default:
+        while (--timeout > 0) {
+            if (semaphore_try_wait(sem)) {
+                return UACPI_TRUE;
+            }
+            _pause(); // TODO: replace this with an actual sleep function
+        }
+        break;
     }
 
-    while (!sem->lock)
-        ;
-
-    return UACPI_TRUE;
+    return UACPI_FALSE;
 }
 
 void uacpi_kernel_signal_event(uacpi_handle semaphore) {
@@ -438,7 +449,7 @@ void uacpi_kernel_signal_event(uacpi_handle semaphore) {
         return;
     }
 
-    sem->lock = true;
+    semaphore_signal(sem);
 }
 
 void uacpi_kernel_reset_event(uacpi_handle semaphore) {
@@ -447,7 +458,7 @@ void uacpi_kernel_reset_event(uacpi_handle semaphore) {
         return;
     }
 
-    sem->lock = false;
+    semaphore_init(sem, 0);
 }
 
 uacpi_status uacpi_kernel_handle_firmware_request(uacpi_firmware_request *fw_req) {

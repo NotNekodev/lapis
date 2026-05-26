@@ -72,6 +72,7 @@ sources = files(
   'src/util/memory.c',
   'src/util/spinlock.c',
   'src/util/rbtree.c',
+  'src/util/semaphore.c',
   'src/log/sink.c',
   'src/log/log.c',
   'src/log/sinks/e9.c',
