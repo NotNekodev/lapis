@@ -152,10 +152,6 @@ void kmain(void) {
         hcf();
     }
 
-
-    for (;;)
-        ;
-
     info("acpi: initialization complete\n");
 
     hcf();
