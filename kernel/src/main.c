@@ -70,7 +70,6 @@ static void apic_timer_irq(uint32_t irq, void *data, context_t *ctx) {
     (void)irq;
     (void)data;
     (void)ctx;
-    debug("apic: timer!\n");
 }
 
 void kmain(void) {
@@ -129,9 +128,8 @@ void kmain(void) {
 
     irq_init();
     int irq = irq_request_local(apic_timer_irq, NULL, "lapic-timer");
-    debug("kmain: requested local APIC timer irq=%d\n", irq);
-    
     lapic_timer_init((uint8_t)irq);
+    irq_enable(irq);
 
     for (;;)
         ;

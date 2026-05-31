@@ -19,6 +19,7 @@ c_args = [
   '-nostdinc',
   '-ffreestanding',
   '-fno-stack-protector',
+  '-fno-omit-frame-pointer',
   '-fno-stack-check',
   '-fno-lto',
   '-fno-PIC',

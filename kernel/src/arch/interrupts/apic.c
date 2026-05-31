@@ -397,8 +397,8 @@ void lapic_timer_init(uint8_t vector) {
     lapic_done = 0;
     lapic_calib_count = 0;
 
-    register_interrupt(32, pit_calibrate_irq, NULL);
-    apic_route_irq(0, 32);
+    register_interrupt(0xFE, pit_calibrate_irq, NULL);
+    apic_route_irq(0, 0xFE);
 
     pit_init(100);
 
@@ -439,8 +439,8 @@ void lapic_timer_init(uint8_t vector) {
     lapic_write(LAPIC_REG_TIMER_INITCNT, reload);
 
     info("lapic: timer initialized vector=0x%x frequency=%llu Hz\n", vector, lapic_freq_hz);
+    unregister_interrupt(0xFE);
     apic_mask_irq(0);
-    unregister_interrupt(32);
 }
 
 static void apic_timer_irq_handler(uint32_t irq, void *data, context_t *ctx) {
