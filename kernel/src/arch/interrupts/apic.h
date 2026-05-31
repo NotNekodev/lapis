@@ -32,6 +32,7 @@
 
 int apic_init(void);
 bool is_apic_enabled(void);
+uint32_t apic_get_lapic_id(void);
 
 void apic_eoi(isr_t *self);
 int apic_timer_test(void);

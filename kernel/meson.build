@@ -83,6 +83,7 @@ sources = files(
   'src/arch/gdt/gdt.c',
   'src/arch/interrupts/idt.c',
   'src/arch/interrupts/isr.c',
+  'src/arch/interrupts/irq.c',
   'src/arch/cpu.c',
   'src/arch/smp.c',
   'src/arch/interrupts/apic.c',

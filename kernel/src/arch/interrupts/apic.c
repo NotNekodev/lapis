@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "log/log.h"
 #include "mm/paging.h"
+#include <arch/interrupts/irq.h>
 #include "mm/page.h"
 #include "uacpi/acpi.h"
 #include "uacpi/status.h"
@@ -14,10 +15,6 @@
 #define LAPIC_SIZE  0x1000
 
 #define IA32_APIC_BASE_MSR 0x1B
-#define IA32_APIC_BASE_ENABLE (1ULL << 11)
-
-#define LAPIC_REG_ID          0x020
-#define LAPIC_REG_EOI         0x0B0
 #define LAPIC_REG_SVR         0x0F0
 #define LAPIC_REG_TPR         0x080
 #define LAPIC_REG_DFR         0x0E0
@@ -58,6 +55,7 @@ static volatile uint32_t lapic_start;
 static volatile uint32_t lapic_end;
 static volatile uint8_t lapic_done;
 static volatile uint64_t lapic_calib_count;
+static volatile uint64_t lapic_timer_ticks;
 static uint64_t lapic_freq_hz = 0;
 
 static inline void lapic_write(uint32_t reg, uint32_t val) {
@@ -82,10 +80,6 @@ static inline uint32_t ioapic_read(struct ioapic_entry *io, uint8_t reg) {
 
     base[0] = reg;
     return base[4];
-}
-
-static uint32_t apic_get_lapic_id(void) {
-    return lapic_read(LAPIC_REG_ID) >> 24;
 }
 
 static void apic_lookup_iso(uint8_t source, uint32_t *gsi, uint16_t *flags) {
@@ -364,6 +358,14 @@ bool is_apic_enabled(void) {
     return (_rdmsr(IA32_APIC_BASE_MSR) & IA32_APIC_BASE_ENABLE) != 0;
 }
 
+uint32_t apic_get_lapic_id(void) {
+    if (lapic_virt == 0) {
+        return 0;
+    }
+
+    return lapic_read(LAPIC_REG_ID) >> 24;
+}
+
 void apic_eoi(isr_t *self) {
     (void)self;
     if (lapic_virt != 0) {
@@ -439,4 +441,63 @@ void lapic_timer_init(uint8_t vector) {
     info("lapic: timer initialized vector=0x%x frequency=%llu Hz\n", vector, lapic_freq_hz);
     apic_mask_irq(0);
     unregister_interrupt(32);
+}
+
+static void apic_timer_irq_handler(uint32_t irq, void *data, context_t *ctx) {
+    (void)irq;
+    (void)data;
+    (void)ctx;
+    lapic_timer_ticks++;
+    debug("apic: timer tick %llu\n", lapic_timer_ticks);
+}
+
+int apic_timer_test(void) {
+    if (!is_apic_enabled() || lapic_virt == 0) {
+        warn("apic: timer test skipped (apic enabled=%d lapic mapped=%d)\n",
+             is_apic_enabled() ? 1 : 0, lapic_virt != 0 ? 1 : 0);
+        return -1;
+    }
+
+    uint64_t rflags = _get_rflags();
+    if (!(rflags & (1ULL << 9))) {
+        warn("apic: timer test running with interrupts disabled\n");
+    }
+
+    lapic_timer_ticks = 0;
+
+    int irq = irq_request_local(apic_timer_irq_handler, NULL, "lapic-timer-test");
+    if (irq < 0) {
+        warn("apic: timer test failed to allocate vector\n");
+        return -1;
+    }
+
+    uint8_t vector = (uint8_t)irq;
+
+    lapic_write(LAPIC_REG_TIMER_DIVIDE, 0x3);
+    lapic_write(LAPIC_REG_LVT_TIMER, vector | APIC_LVT_PERIODIC);
+    lapic_write(LAPIC_REG_TIMER_INITCNT, 0x100000);
+
+    info("apic: timer test armed (periodic, vector=0x%02x)\n", vector);
+
+    uint32_t start = lapic_read(LAPIC_REG_TIMER_CURRCNT);
+    uint64_t spins = 0;
+    while (lapic_timer_ticks == 0 && spins < 20000000) {
+        spins++;
+        _pause();
+    }
+
+    uint32_t end = lapic_read(LAPIC_REG_TIMER_CURRCNT);
+
+    if (lapic_timer_ticks == 0) {
+        warn("apic: timer test timeout start=0x%08x end=0x%08x\n", start, end);
+        irq_free((uint32_t)irq);
+        return -1;
+    }
+
+    info("apic: timer test ok ticks=%llu start=0x%08x end=0x%08x\n",
+         lapic_timer_ticks, start, end);
+
+    lapic_write(LAPIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+    irq_free((uint32_t)irq);
+    return 0;
 }

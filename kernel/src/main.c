@@ -1,4 +1,5 @@
 #include "arch/interrupts/apic.h"
+#include "arch/interrupts/irq.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"
@@ -65,8 +66,9 @@ static volatile uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARK
 
 kernel_info_t kernel_info;
 
-static void apic_timer_irq(isr_t *self, context_t *ctx) {
-    (void)self;
+static void apic_timer_irq(uint32_t irq, void *data, context_t *ctx) {
+    (void)irq;
+    (void)data;
     (void)ctx;
     debug("apic: timer!\n");
 }
@@ -124,8 +126,12 @@ void kmain(void) {
     }
 
     apic_init();
-    register_interrupt(0xFE, apic_timer_irq, apic_eoi);
-    lapic_timer_init(0xFE);
+
+    irq_init();
+    int irq = irq_request_local(apic_timer_irq, NULL, "lapic-timer");
+    debug("kmain: requested local APIC timer irq=%d\n", irq);
+    
+    lapic_timer_init((uint8_t)irq);
 
     for (;;)
         ;
