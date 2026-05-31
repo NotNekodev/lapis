@@ -1,6 +1,5 @@
 #include "arch/interrupts/apic.h"
 #include "arch/interrupts/irq.h"
-#include "uacpi/context.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"

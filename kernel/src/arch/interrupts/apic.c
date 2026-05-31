@@ -55,7 +55,6 @@ static volatile uint32_t lapic_start;
 static volatile uint32_t lapic_end;
 static volatile uint8_t lapic_done;
 static volatile uint64_t lapic_calib_count;
-static volatile uint64_t lapic_timer_ticks;
 static uint64_t lapic_freq_hz = 0;
 
 static inline void lapic_write(uint32_t reg, uint32_t val) {
