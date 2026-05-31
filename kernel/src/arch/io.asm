@@ -94,3 +94,11 @@ _wrmsr:
     shr rdx, 32
     wrmsr
     ret
+
+global _rdtsc
+_rdtsc:
+    lfence
+    rdtsc
+    shl rdx, 32
+    or rax, rdx
+    ret

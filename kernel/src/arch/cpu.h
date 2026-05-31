@@ -38,5 +38,6 @@ void cpu_set_current(cpu_t *cpu);
 cpu_t *get_current_cpu(void);
 long get_current_cpuid(void);
 
+void calibrate_tsc(void);
 
 #endif // _CPU_H

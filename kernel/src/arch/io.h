@@ -24,6 +24,8 @@ uint32_t _ind(uint16_t port);
 uint64_t _rdmsr(uint32_t msr);
 void _wrmsr(uint32_t msr, uint64_t value);
 
+uint64_t _rdtsc(void);
+
 #define hcf() do { \
     _cli(); \
     _hlt(); \

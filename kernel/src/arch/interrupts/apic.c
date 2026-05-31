@@ -407,6 +407,9 @@ void lapic_timer_init(uint8_t vector) {
 
     _sti();
 
+    uint64_t start = _rdtsc();
+    info("lapic: tsc_start=%llu\n", start);
+
     uint64_t spins = 0;
     while (!lapic_done) {
         _pause();
@@ -415,6 +418,13 @@ void lapic_timer_init(uint8_t vector) {
             break;
         }
     }
+
+    uint64_t end = _rdtsc();
+    info("lapic: tsc_end=%llu delta=%llu\n", end, end - start);
+
+    kernel_info.tsc_freq = end - start;
+
+    info("lapic: PIT calibration complete, TSC frequency is approximately %llu Hz\n", kernel_info.tsc_freq);
 
     pit_stop();
 

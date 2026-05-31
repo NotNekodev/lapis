@@ -40,6 +40,8 @@ typedef struct kernel_info {
         } iso_table[MAX_ISO];
         size_t iso_count;
     } ioapic;
+
+    uint64_t tsc_freq;
 } kernel_info_t;
 
 extern kernel_info_t kernel_info;
