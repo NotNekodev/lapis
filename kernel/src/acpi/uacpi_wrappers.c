@@ -5,6 +5,7 @@
 #include "log/log.h"
 #include "mm/kheap.h"
 #include "mm/page.h"
+#include "mm/paging.h"
 #include "uacpi/log.h"
 #include "uacpi/platform/arch_helpers.h"
 #include "uacpi/status.h"
@@ -32,10 +33,17 @@ uacpi_status uacpi_kernel_get_rsdp(uacpi_phys_addr *rsdp_addr) {
 void* uacpi_kernel_map(uacpi_phys_addr addr, uacpi_size len) {
     uint64_t aligned = ALIGN_DOWN(addr, PAGE_SIZE);
     size_t offset = (size_t)(addr - aligned);
+    size_t actual_len = len + offset;
+    size_t npages = ALIGN_UP(actual_len, PAGE_SIZE) / PAGE_SIZE;
 
-    uint64_t vaddr = (uint64_t)PHYS_TO_VIRT(aligned) + offset;
-    info("uacpi_map: phys=0x%llx len=%zu -> virt=0x%llx\n", (uint64_t)addr, len, vaddr);
-    return (void *)vaddr;
+    uint64_t vaddr = (uint64_t)PHYS_TO_VIRT(aligned);
+
+    if (kernel_info.kernel_pt) {
+        map_mmio(kernel_info.kernel_pt, vaddr, aligned, npages);
+        reg_kernel_mmio(vaddr, aligned, npages);
+    }
+
+    return (void *)(vaddr + offset);
 }
 
 void uacpi_kernel_unmap(void *addr, uacpi_size len) {
