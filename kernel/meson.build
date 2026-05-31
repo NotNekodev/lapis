@@ -85,6 +85,8 @@ sources = files(
   'src/arch/interrupts/isr.c',
   'src/arch/cpu.c',
   'src/arch/smp.c',
+  'src/arch/interrupts/apic.c',
+  'src/arch/interrupts/pit.c',
   'src/acpi/uacpi_wrappers.c',
   'src/mm/pfn_db.c',
   'cc-runtime/src/cc-runtime.c',

@@ -1,3 +1,4 @@
+#include "arch/interrupts/apic.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"
@@ -64,6 +65,12 @@ static volatile uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARK
 
 kernel_info_t kernel_info;
 
+static void apic_timer_irq(isr_t *self, context_t *ctx) {
+    (void)self;
+    (void)ctx;
+    debug("apic: timer!\n");
+}
+
 void kmain(void) {
     __asm__ volatile("movq %%rsp, %0" : "=r"(kernel_info.kstack_top));
 
@@ -115,6 +122,13 @@ void kmain(void) {
         critical("acpi: initial initialization of uACPI failed: %s\n", uacpi_status_to_string(ret));
         hcf();
     }
+
+    apic_init();
+    register_interrupt(0xFE, apic_timer_irq, apic_eoi);
+    lapic_timer_init(0xFE);
+
+    for (;;)
+        ;
 
     ret = uacpi_namespace_load();
     if (uacpi_unlikely_error(ret)) {

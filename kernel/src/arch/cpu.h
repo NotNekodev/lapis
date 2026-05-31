@@ -3,6 +3,7 @@
 
 #include <arch/interrupts/isr.h>
 #include <stdint.h>
+#include <uacpi/acpi.h>
 
 // TODO: do something with this qwq
 typedef struct ist {

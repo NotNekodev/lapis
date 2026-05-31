@@ -78,3 +78,19 @@ _set_rflags:
     popfq
 
     ret
+
+global _rdmsr
+_rdmsr:
+    mov ecx, edi
+    rdmsr
+    mov rax, rax
+    ret
+
+global _wrmsr
+_wrmsr:
+    mov ecx, edi
+    mov eax, esi
+    mov rdx, rsi
+    shr rdx, 32
+    wrmsr
+    ret

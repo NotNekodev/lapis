@@ -5,7 +5,11 @@
 
 #include <mm/vmm.h>
 
+#include <uacpi/acpi.h>
+
 #define KSTACK_SIZE 64 * 0x1000
+#define MAX_IOAPICS 8
+#define MAX_ISO 16
 
 typedef struct kernel_info {
     struct limine_framebuffer *framebuffer;
@@ -21,6 +25,21 @@ typedef struct kernel_info {
     uint64_t kaddr_phys;
 
     uint64_t rsdp_addr;
+
+    struct {
+        size_t ioapic_count;
+        struct ioapic_entry {
+            uint8_t  id;
+            uint32_t gsi_base;
+            uintptr_t phys_addr;
+        } ioapics[MAX_IOAPICS];
+        struct {
+            uint8_t source;
+            uint32_t gsi;
+            uint16_t flags;
+        } iso_table[MAX_ISO];
+        size_t iso_count;
+    } ioapic;
 } kernel_info_t;
 
 extern kernel_info_t kernel_info;

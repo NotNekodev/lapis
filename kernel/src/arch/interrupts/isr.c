@@ -24,3 +24,10 @@ isr_t *allocate_interrupt(void (*func)(isr_t *self, context_t *ctx), void (*eoi)
 
 	return isr;
 }
+
+void unregister_interrupt(int vector) {
+	isr_t *isr = &get_current_cpu()->isr[vector];
+	isr->handler = NULL;
+	isr->eoi = NULL;
+	isr->id = 0;
+}

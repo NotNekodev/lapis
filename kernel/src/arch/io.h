@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define IA32_APIC_BASE_MSR 0x1B
+
 void _hlt(void);
 void _sti(void);
 void _cli(void);
@@ -18,6 +20,9 @@ void _outd(uint16_t port, uint32_t value);
 uint8_t _inb(uint16_t port);
 uint16_t _inw(uint16_t port);
 uint32_t _ind(uint16_t port);
+
+uint64_t _rdmsr(uint32_t msr);
+void _wrmsr(uint32_t msr, uint64_t value);
 
 #define hcf() do { \
     _cli(); \
