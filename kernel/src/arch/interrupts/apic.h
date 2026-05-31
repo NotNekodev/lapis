@@ -39,4 +39,6 @@ int apic_timer_test(void);
 
 void lapic_timer_init(uint8_t vector);
 
+void lapic_timer_sleep_kernel(uint64_t ms);
+
 #endif // _APIC_H

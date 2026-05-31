@@ -443,61 +443,19 @@ void lapic_timer_init(uint8_t vector) {
     apic_mask_irq(0);
 }
 
-static void apic_timer_irq_handler(uint32_t irq, void *data, context_t *ctx) {
-    (void)irq;
-    (void)data;
-    (void)ctx;
-    lapic_timer_ticks++;
-    debug("apic: timer tick %llu\n", lapic_timer_ticks);
-}
-
-int apic_timer_test(void) {
-    if (!is_apic_enabled() || lapic_virt == 0) {
-        warn("apic: timer test skipped (apic enabled=%d lapic mapped=%d)\n",
-             is_apic_enabled() ? 1 : 0, lapic_virt != 0 ? 1 : 0);
-        return -1;
+void lapic_timer_sleep_kernel(uint64_t ms) {
+    if (lapic_freq_hz == 0) {
+        warn("lapic: timer not calibrated, cannot sleep\n");
+        return;
     }
 
-    uint64_t rflags = _get_rflags();
-    if (!(rflags & (1ULL << 9))) {
-        warn("apic: timer test running with interrupts disabled\n");
-    }
-
-    lapic_timer_ticks = 0;
-
-    int irq = irq_request_local(apic_timer_irq_handler, NULL, "lapic-timer-test");
-    if (irq < 0) {
-        warn("apic: timer test failed to allocate vector\n");
-        return -1;
-    }
-
-    uint8_t vector = (uint8_t)irq;
+    uint64_t ticks = (lapic_freq_hz * ms) / 1000;
 
     lapic_write(LAPIC_REG_TIMER_DIVIDE, 0x3);
-    lapic_write(LAPIC_REG_LVT_TIMER, vector | APIC_LVT_PERIODIC);
-    lapic_write(LAPIC_REG_TIMER_INITCNT, 0x100000);
+    lapic_write(LAPIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+    lapic_write(LAPIC_REG_TIMER_INITCNT, ticks);
 
-    info("apic: timer test armed (periodic, vector=0x%02x)\n", vector);
-
-    uint32_t start = lapic_read(LAPIC_REG_TIMER_CURRCNT);
-    uint64_t spins = 0;
-    while (lapic_timer_ticks == 0 && spins < 20000000) {
-        spins++;
+    while (lapic_read(LAPIC_REG_TIMER_CURRCNT) != 0) {
         _pause();
     }
-
-    uint32_t end = lapic_read(LAPIC_REG_TIMER_CURRCNT);
-
-    if (lapic_timer_ticks == 0) {
-        warn("apic: timer test timeout start=0x%08x end=0x%08x\n", start, end);
-        irq_free((uint32_t)irq);
-        return -1;
-    }
-
-    info("apic: timer test ok ticks=%llu start=0x%08x end=0x%08x\n",
-         lapic_timer_ticks, start, end);
-
-    lapic_write(LAPIC_REG_LVT_TIMER, APIC_LVT_MASKED);
-    irq_free((uint32_t)irq);
-    return 0;
 }

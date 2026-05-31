@@ -1,6 +1,7 @@
+#include "arch/interrupts/apic.h"
+#include "arch/interrupts/irq.h"
 #include "arch/io.h"
 #include "kernel.h"
-#include "arch/interrupts/isr.h"
 #include "log/log.h"
 #include "mm/kheap.h"
 #include "mm/page.h"
@@ -8,6 +9,7 @@
 #include "uacpi/platform/arch_helpers.h"
 #include "uacpi/status.h"
 #include "uacpi/types.h"
+#include <util/memory.h>
 #include <uacpi/kernel_api.h>
 #include "util/semaphore.h"
 #include "util/spinlock.h"
@@ -28,17 +30,11 @@ uacpi_status uacpi_kernel_get_rsdp(uacpi_phys_addr *rsdp_addr) {
 }
 
 void* uacpi_kernel_map(uacpi_phys_addr addr, uacpi_size len) {
-    // this is going to be some weird math, see the header definition for more info
     uint64_t aligned = ALIGN_DOWN(addr, PAGE_SIZE);
     size_t offset = (size_t)(addr - aligned);
 
-    size_t actual_len = len + offset;
-    size_t pages = ALIGN_UP(actual_len, PAGE_SIZE) / PAGE_SIZE;
-    
-    (void)pages;
-
-    uint64_t vaddr = (uint64_t)PHYS_TO_VIRT(aligned);
-    vaddr += offset;
+    uint64_t vaddr = (uint64_t)PHYS_TO_VIRT(aligned) + offset;
+    info("uacpi_map: phys=0x%llx len=%zu -> virt=0x%llx\n", (uint64_t)addr, len, vaddr);
     return (void *)vaddr;
 }
 
@@ -220,6 +216,7 @@ uacpi_status uacpi_kernel_io_map(uacpi_io_addr base, uacpi_size len, uacpi_handl
 
     io_t *io = kzalloc(sizeof(io_t));
     if (!io) {
+        critical("acpi: failed to allocate memory for io mapping\n");
         return UACPI_STATUS_OUT_OF_MEMORY;
     }
 
@@ -318,19 +315,34 @@ uacpi_status uacpi_kernel_io_write32(uacpi_handle range, uacpi_size offset, uacp
 }
 
 void *uacpi_kernel_alloc(uacpi_size size) {
-    return kmalloc(size);
+    void *ptr = kzalloc(size);
+    if (!ptr) {
+        critical("uacpi_alloc: failed to allocate %zu bytes\n", (size_t)size);
+        return NULL;
+    }
+
+    memset(ptr, 0, size);
+
+    return ptr;
 }
 
 #ifdef UACPI_NATIVE_ALLOC_ZEROED
 void *uacpi_kernel_alloc_zeroed(uacpi_size size) {
-    return kzalloc(size);
+    void *ptr = kzalloc(size);
+    if (!ptr) {
+        critical("uacpi_alloc_zeroed: failed to allocate %zu bytes\n", (size_t)size);
+        return NULL;
+    }
+
+    memset(ptr, 0, size);
+
+    return ptr;
 }
 #endif
 
 #ifndef UACPI_SIZED_FREES
 void uacpi_kernel_free(void *mem) {
     if (!mem) {
-        warn("acpi: tried to free NULL pointer\n");
         return;
     }
 
@@ -341,7 +353,6 @@ void uacpi_kernel_free(void *mem, uacpi_size size_hint) {
     (void)size_hint;
 
     if (!mem) {
-        warn("acpi: tried to free NULL pointer\n");
         return;
     }
 
@@ -359,9 +370,7 @@ void uacpi_kernel_stall(uacpi_u8 usec) {
 }
 
 void uacpi_kernel_sleep(uacpi_u64 msec) {
-    // TODO: implement
-    for (uacpi_u64 i = 0; i < msec * 1000; i++)
-        ;
+    lapic_timer_sleep_kernel(msec);
 }
 
 
@@ -478,44 +487,49 @@ uacpi_status uacpi_kernel_handle_firmware_request(uacpi_firmware_request *fw_req
     return UACPI_STATUS_OK;
 }
 
-static uacpi_interrupt_handler uacpi_handlers[256] = {0};
+typedef struct {
+    uacpi_interrupt_handler handler;
+    uacpi_handle ctx;
+    int irq_vector;
+} uacpi_irq_entry_t;
 
-void uacpi_irq_handler(isr_t *self, context_t *ctx) {
-    int irq = ctx->irq - 32;
+static uacpi_irq_entry_t uacpi_irq_entries[256] = {0};
 
-    if (!self->private) {
-        warn("acpi: irq %d has no context!\n", irq);
-    }
+static void uacpi_irq_dispatch(uint32_t irq, void *data, context_t *ctx) {
+    (void)irq;
+    (void)ctx;
+    uacpi_irq_entry_t *entry = (uacpi_irq_entry_t *)data;
 
-    if (!uacpi_handlers[irq]) {
-        error("acpi: no handler registered for irq %d!\n", irq);
+    if (!entry || !entry->handler) {
+        warn("acpi: irq dispatch with no handler\n");
         return;
     }
 
-    uacpi_handlers[irq](self->private);
+    entry->handler(entry->ctx);
 }
 
 uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32 irq, uacpi_interrupt_handler handler, uacpi_handle ctx, uacpi_handle *out_irq_handle) {
-    if (irq >= 256) {
+    if (irq >= 256 || !out_irq_handle || !handler) {
         return UACPI_STATUS_INVALID_ARGUMENT;
     }
 
-    if (!out_irq_handle) {
-        return UACPI_STATUS_INVALID_ARGUMENT;
-    }
-
-    if (uacpi_handlers[irq]) {
+    if (uacpi_irq_entries[irq].handler) {
         return UACPI_STATUS_ALREADY_EXISTS;
     }
 
-    isr_t *isr = allocate_interrupt(uacpi_irq_handler, NULL);
-    if (!isr) {
+    uacpi_irq_entry_t *entry = &uacpi_irq_entries[irq];
+    entry->handler = handler;
+    entry->ctx = ctx;
+
+    int vector = irq_request((uint32_t)irq, uacpi_irq_dispatch, entry, "uacpi-irq");
+    if (vector < 0) {
+        entry->handler = NULL;
+        entry->ctx = NULL;
+        critical("acpi: failed to request IRQ for ACPI interrupt handler: %d\n", vector);
         return UACPI_STATUS_OUT_OF_MEMORY;
     }
 
-    isr->private = ctx;
-    uacpi_handlers[irq] = handler;
-
+    entry->irq_vector = vector;
     *out_irq_handle = (uacpi_handle)(uintptr_t)irq;
     return UACPI_STATUS_OK;
 }
@@ -528,7 +542,17 @@ uacpi_status uacpi_kernel_uninstall_interrupt_handler(uacpi_interrupt_handler ha
         return UACPI_STATUS_INVALID_ARGUMENT;
     }
 
-    uacpi_handlers[irq] = NULL;
+    uacpi_irq_entry_t *entry = &uacpi_irq_entries[irq];
+    if (!entry->handler) {
+        return UACPI_STATUS_NOT_FOUND;
+    }
+
+    irq_free((uint32_t)entry->irq_vector);
+
+    entry->handler = NULL;
+    entry->ctx = NULL;
+    entry->irq_vector = 0;
+
     return UACPI_STATUS_OK;
 }
 

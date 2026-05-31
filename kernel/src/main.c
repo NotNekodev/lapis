@@ -1,5 +1,6 @@
 #include "arch/interrupts/apic.h"
 #include "arch/interrupts/irq.h"
+#include "uacpi/context.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"
@@ -131,13 +132,18 @@ void kmain(void) {
     lapic_timer_init((uint8_t)irq);
     irq_enable(irq);
 
-    for (;;)
-        ;
+    _cli();
+
+    uacpi_context_set_log_level(UACPI_LOG_TRACE);
 
     ret = uacpi_namespace_load();
     if (uacpi_unlikely_error(ret)) {
         critical("acpi: acpi namespace initialization failed: %s\n", uacpi_status_to_string(ret));
     }
+
+
+    for (;;)
+        ;
 
     ret = uacpi_namespace_initialize();
     if (uacpi_unlikely_error(ret)) {

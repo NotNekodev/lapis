@@ -34,6 +34,7 @@ c_args = [
   '-mno-sse2',
   '-mno-red-zone',
   '-mcmodel=kernel',
+  '-DUACPI_OVERRIDE_CONFIG',
 ]
 
 if c.get_id() == 'clang'

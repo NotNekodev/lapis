@@ -10,7 +10,7 @@
 #include <log/log.h>
 
 #define KHEAP_ALIGN 16u
-#define SLAB_MAGIC 0x534C4142u // "SLAB"
+#define SLAB_MAGIC 0x534C4142u
 #define BIG_CACHE_INDEX 0xFFFFu
 
 typedef struct slab {
@@ -21,6 +21,7 @@ typedef struct slab {
     uint16_t capacity;
     uint16_t free_count;
     uint16_t cache_index;
+    uint32_t npages;
 } slab_t;
 
 typedef struct slab_cache {
@@ -62,6 +63,7 @@ static slab_t *slab_create(uint16_t object_size, uint16_t cache_index) {
     slab->magic = SLAB_MAGIC;
     slab->object_size = object_size;
     slab->cache_index = cache_index;
+    slab->npages = 1;
 
     uintptr_t obj_start = align_up_uintptr((uintptr_t)page_ptr + sizeof(slab_t), KHEAP_ALIGN);
     uintptr_t obj_end = (uintptr_t)page_ptr + PAGE_SIZE;
@@ -99,6 +101,11 @@ static void slab_destroy(slab_t *slab) {
     page_t *page = pfn_db_phys_to_page(phys);
     if (!page) {
         critical("kheap: invalid slab page to free paddr=%#018llx\n", phys);
+        return;
+    }
+
+    if (slab->npages > 1) {
+        pmm_pages_release(page, slab->npages);
         return;
     }
 
@@ -170,31 +177,45 @@ void *kmalloc(size_t size) {
     slab_cache_t *cache = cache_for_size(size, &cache_index);
 
     if (!cache) {
-        slab_t *slab = slab_create((uint16_t)size, BIG_CACHE_INDEX);
-        if (!slab) {
+        size_t total = sizeof(slab_t) + KHEAP_ALIGN + size;
+        size_t npages = ALIGN_UP(total, PAGE_SIZE) / PAGE_SIZE;
+
+        page_t *page = pmm_alloc_pages(npages);
+        if (!page) {
+            warn("kheap: pmm_alloc_pages(%zu) failed for size=%zu\n", npages, size);
             spinlock_release(&kheap_lock);
             return NULL;
         }
-        slab->free_count = 0;
+
+        uint64_t phys = pfn_db_page_to_phys(page);
+        void *page_ptr = PHYS_TO_VIRT(phys);
+        memset(page_ptr, 0, npages * PAGE_SIZE);
+
+        slab_t *slab = (slab_t *)page_ptr;
+        slab->magic = SLAB_MAGIC;
+        slab->object_size = (uint16_t)(size > 0xFFFF ? 0xFFFF : size);
+        slab->cache_index = BIG_CACHE_INDEX;
         slab->capacity = 1;
+        slab->free_count = 0;
         slab->free_list = NULL;
         slab->next = NULL;
+        slab->npages = (uint32_t)npages;
 
         uintptr_t obj_start = align_up_uintptr((uintptr_t)slab + sizeof(slab_t), KHEAP_ALIGN);
-        if (obj_start + size > (uintptr_t)slab + PAGE_SIZE) {
-            slab_destroy(slab);
-            spinlock_release(&kheap_lock);
-            return NULL;
-        }
 
         spinlock_release(&kheap_lock);
         return (void *)obj_start;
     }
 
     slab_t *slab = cache->slabs;
+    while (slab && !slab->free_list) {
+        slab = slab->next;
+    }
+
     if (!slab) {
         slab = slab_create(cache->object_size, cache_index);
         if (!slab) {
+            warn("kheap: slab_create failed for size=%u\n", cache->object_size);
             spinlock_release(&kheap_lock);
             return NULL;
         }
@@ -202,12 +223,22 @@ void *kmalloc(size_t size) {
     }
 
     void *obj = slab->free_list;
-    if (!obj) {
+
+    if ((uintptr_t)obj < 0x1000) {
+        critical("kheap: bogus free_list ptr=%p slab=%p size=%u free_count=%u capacity=%u\n",
+                 obj, slab, slab->object_size, slab->free_count, slab->capacity);
         spinlock_release(&kheap_lock);
         return NULL;
     }
 
     slab->free_list = *(void **)obj;
+
+    if ((uintptr_t)slab->free_list != 0 && (uintptr_t)slab->free_list < 0x1000) {
+        critical("kheap: bogus next free_list ptr=%p after alloc from slab=%p size=%u\n",
+                 slab->free_list, slab, slab->object_size);
+        slab->free_list = NULL;
+    }
+
     if (slab->free_count > 0) {
         slab->free_count--;
     }
@@ -237,6 +268,13 @@ void kfree(void *ptr) {
     slab_t *slab = (slab_t *)page_base(ptr);
     if (slab->magic != SLAB_MAGIC) {
         critical("kheap: invalid free %p (bad slab magic)\n", ptr);
+        return;
+    }
+
+    uintptr_t slab_end = (uintptr_t)slab + (uintptr_t)slab->npages * PAGE_SIZE;
+    if ((uintptr_t)ptr >= slab_end) {
+        critical("kheap: ptr %p out of slab bounds [%p, %p)\n",
+                 ptr, slab, (void*)slab_end);
         return;
     }
 

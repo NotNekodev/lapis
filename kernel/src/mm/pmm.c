@@ -196,6 +196,70 @@ uint64_t pmm_total_pages(void) {
     return total_pages;
 }
 
+page_t *pmm_alloc_pages(size_t count) {
+    if (count == 0) {
+        return NULL;
+    }
+
+    if (count == 1) {
+        return pmm_alloc_page();
+    }
+
+    page_t *db = pfn_db_getdb();
+    uint64_t max_pfn = pfn_db_getmax();
+
+    for (uint64_t i = 0; i + count - 1 <= max_pfn; i++) {
+        int ok = 1;
+        for (size_t j = 0; j < count; j++) {
+            if (!is_page_free(&db[i + j])) {
+                ok = 0;
+                i += j;
+                break;
+            }
+        }
+        if (!ok) continue;
+
+        for (size_t j = 0; j < count; j++) {
+            page_t *page = &db[i + j];
+            
+            page_t *prev = page->u2.prev;
+            page_t *next = page->u1.next;
+
+            if (prev) {
+                prev->u1.next = next;
+            } else {
+                free_list = next;
+            }
+
+            if (next) {
+                next->u2.prev = prev;
+            }
+
+            page->u1.next = NULL;
+            page->u2.prev = NULL;
+
+            if (free_pages > 0) {
+                free_pages--;
+            }
+            
+            page->flags &= ~(PAGE_FREE | PAGE_RESERVED | PAGE_SHARED | PAGE_COW);
+            page->flags |= PAGE_ALLOCATED;
+            page->refcount = 1;
+            page->u2.sharecount = 1;
+        }
+
+        return &db[i];
+    }
+
+    return NULL;
+}
+
+void pmm_pages_release(page_t *page, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        pmm_page_release(&page[i]);
+    }
+}
+
 void pmm_dump_stats(void) {
     debug("pmm: FREE pages: %llu / %llu\n", free_pages, total_pages);
     debug("pmm: FREE bytes: %llu\n", free_pages * PAGE_SIZE);
