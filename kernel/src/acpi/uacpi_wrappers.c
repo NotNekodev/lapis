@@ -1,6 +1,8 @@
+#include "arch/cpu.h"
 #include "arch/interrupts/apic.h"
 #include "arch/interrupts/irq.h"
 #include "arch/io.h"
+#include "dev/pci.h"
 #include "kernel.h"
 #include "log/log.h"
 #include "mm/kheap.h"
@@ -155,9 +157,15 @@ void uacpi_kernel_deinitialize(void) {
 
 // TODO: implement
 uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handle *out_handle) {
-    (void)address;
-    (void)out_handle;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = kzalloc(sizeof(uacpi_pci_address));
+    if (!addr) {
+        return UACPI_STATUS_OUT_OF_MEMORY;
+    }
+
+    *addr = address;
+    *out_handle = addr;
+
+    return UACPI_STATUS_OK;
 }
 
 // TODO: implement
@@ -166,53 +174,56 @@ void uacpi_kernel_pci_device_close(uacpi_handle handle) {
         critical("acpi: tired to close nonexistent pci device handle");
     }
 
+    kfree(handle);
     handle = NULL;
 }
 
 // TODO: implement
 uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacpi_u8 *value) {
-    (void)device;
-    (void)offset;
-    (void)value;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = device;
+    uint32_t val = pci_read_config(addr->bus, addr->device, addr->function, (uint8_t)(offset & ~3));
+    *value = (uint8_t)(val >> ((offset & 3) * 8));
+    return UACPI_STATUS_OK;
 }
 // TODO: implement
 uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uacpi_u16 *value) {
-    (void)device;
-    (void)offset;
-    (void)value;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = device;
+    uint32_t val = pci_read_config(addr->bus, addr->device, addr->function, (uint8_t)(offset & ~3));
+    *value = (uint16_t)(val >> ((offset & 2) * 8));
+    return UACPI_STATUS_OK;
 }
 // TODO: implement
 uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uacpi_u32 *value) {
-    (void)device;
-    (void)offset;
-    (void)value;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = device;
+    *value = pci_read_config(addr->bus, addr->device, addr->function, (uint8_t)offset);
+    return UACPI_STATUS_OK;
 }
 
 // TODO: implement
 uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uacpi_u8 value) {
-    (void)device;
-    (void)offset;
-    (void)value;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = device;
+    uint32_t val = pci_read_config(addr->bus, addr->device, addr->function, (uint8_t)(offset & ~3));
+    uint32_t shift = (offset & 3) * 8;
+    val = (val & ~(0xFFU << shift)) | ((uint32_t)value << shift);
+    pci_write_config(addr->bus, addr->device, addr->function, (uint8_t)(offset & ~3), val);
+    return UACPI_STATUS_OK;
 }
 
 // TODO: implement
 uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, uacpi_u16 value) {
-    (void)device;
-    (void)offset;
-    (void)value;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = device;
+    uint32_t val = pci_read_config(addr->bus, addr->device, addr->function, (uint8_t)(offset & ~3));
+    uint32_t shift = (offset & 2) * 8;
+    val = (val & ~(0xFFFFU << shift)) | ((uint32_t)value << shift);
+    pci_write_config(addr->bus, addr->device, addr->function, (uint8_t)(offset & ~3), val);
+    return UACPI_STATUS_OK;
 }
 
 // TODO: implement
 uacpi_status uacpi_kernel_pci_write32(uacpi_handle device, uacpi_size offset, uacpi_u32 value) {
-    (void)device;
-    (void)offset;
-    (void)value;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    uacpi_pci_address *addr = device;
+    pci_write_config(addr->bus, addr->device, addr->function, (uint8_t)offset, value);
+    return UACPI_STATUS_OK;
 }
 
 typedef struct {
@@ -369,7 +380,7 @@ void uacpi_kernel_free(void *mem, uacpi_size size_hint) {
 #endif
 
 uacpi_u64 uacpi_kernel_get_nanoseconds_since_boot(void) {
-    return 0; // TODO: implement
+    return tsc_get_nanoseconds();
 }
 
 void uacpi_kernel_stall(uacpi_u8 usec) {

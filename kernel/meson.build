@@ -91,6 +91,7 @@ sources = files(
   'src/arch/interrupts/apic.c',
   'src/arch/interrupts/pit.c',
   'src/acpi/uacpi_wrappers.c',
+  'src/dev/pci.c',
   'src/mm/pfn_db.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',
