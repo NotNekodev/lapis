@@ -1,5 +1,8 @@
 #include "arch/interrupts/apic.h"
 #include "arch/interrupts/irq.h"
+#include "dev/bus.h"
+#include "dev/pci.h"
+#include "uacpi/acpi.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"
@@ -71,6 +74,8 @@ static void apic_timer_irq(uint32_t irq, void *data, context_t *ctx) {
     (void)data;
     (void)ctx;
 }
+
+static bus_t pci_bus;
 
 void kmain(void) {
     __asm__ volatile("movq %%rsp, %0" : "=r"(kernel_info.kstack_top));
@@ -152,6 +157,8 @@ void kmain(void) {
     }
 
     info("acpi: initialization complete\n");
+
+    pci_init(&pci_bus);
 
     hcf();
 }
