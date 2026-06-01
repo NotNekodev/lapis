@@ -2,9 +2,21 @@
 #define _DEVICE_H 1
 
 #include <stdint.h>
+#include <stdbool.h>
 
 struct bus;
 struct driver;
+struct irq_desc;
+
+typedef struct device_irq {
+    uint32_t irq;
+    uint32_t hwirq;
+
+    bool allocated;
+    bool shared;
+
+    struct device_irq *next;
+} device_irq_t;
 
 typedef struct device {
     const char *name;
@@ -33,9 +45,13 @@ typedef struct device {
 
     // state
     void *state;
+
+    // irqs
+    device_irq_t *irqs;
 } device_t;
 
 device_t *device_create(const char *name);
 void device_add_child(device_t *parent, device_t *child);
+void device_add_irq(device_t *dev, uint32_t irq);
 
 #endif // _DEVICE_H

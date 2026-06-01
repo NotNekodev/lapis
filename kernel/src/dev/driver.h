@@ -2,6 +2,7 @@
 #define _DRIVER_H 1
 
 #include "dev/device_id.h"
+#include "arch/interrupts/irq.h"
 #include <stddef.h>
 
 struct device;
@@ -14,6 +15,8 @@ typedef struct driver {
 
     int (*init)(struct device *dev);
     void (*remove)(struct device *dev);
+
+    irq_handler_t irq_handler;
 
     struct driver *next;
 } driver_t;

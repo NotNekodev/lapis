@@ -1,26 +1,29 @@
 #include "arch/io.h"
 #include "dev/bus.h"
-#include "log/log.h"
+#include "dev/device.h"
 #include "mm/kheap.h"
+#include "log/log.h"
 #include <dev/pci.h>
 #include <log/nanoprintf.h>
 
 void pci_write_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint32_t val) {
     uint32_t address = (1 << 31)
-                     | ((uint32_t)bus   << 16)
-                     | ((uint32_t)slot  << 11)
-                     | ((uint32_t)func  <<  8)
-                     | (offset & 0xFC);
+        | ((uint32_t)bus << 16)
+        | ((uint32_t)slot << 11)
+        | ((uint32_t)func << 8)
+        | (offset & 0xFC);
+
     _outd(PCI_CONFIG_ADDRESS, address);
     _outd(PCI_CONFIG_DATA, val);
 }
 
 uint32_t pci_read_config(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
     uint32_t address = (1 << 31)
-                     | ((uint32_t)bus   << 16)
-                     | ((uint32_t)slot  << 11)
-                     | ((uint32_t)func  <<  8)
-                     | (offset & 0xFC);
+        | ((uint32_t)bus << 16)
+        | ((uint32_t)slot << 11)
+        | ((uint32_t)func << 8)
+        | (offset & 0xFC);
+
     _outd(PCI_CONFIG_ADDRESS, address);
     return _ind(PCI_CONFIG_DATA);
 }
@@ -55,9 +58,7 @@ static void pci_read_bars(pci_device_t *pdev) {
 
         pdev->bar[i] = bar;
 
-        if (bar == 0) {
-            continue;
-        }
+        if (!bar) continue;
 
         if (bar & 0x1) {
             pdev->bar_is_io[i] = true;
@@ -71,10 +72,7 @@ static void pci_read_bars(pci_device_t *pdev) {
 
 static void pci_create_device(bus_t *bus, uint8_t b, uint8_t s, uint8_t f) {
     uint16_t vendor = pci_vendor(b, s, f);
-
-    if (vendor == PCI_INVALID_VENDOR) {
-        return;
-    }
+    if (vendor == PCI_INVALID_VENDOR) return;
 
     pci_device_t *pdev = kzalloc(sizeof(pci_device_t));
 
@@ -90,14 +88,16 @@ static void pci_create_device(bus_t *bus, uint8_t b, uint8_t s, uint8_t f) {
     pdev->prog_if = pci_progif(b, s, f);
 
     pdev->header_type = pci_header_type(b, s, f);
-    pdev->irq_line = (uint8_t)pci_read_config(b, s, f, 0x3C);
+
+    uint8_t irq_line = (uint8_t)(pci_read_config(b, s, f, 0x3C));
+    pdev->irq_line = irq_line;
 
     pci_read_bars(pdev);
 
-    char *dev_name = kzalloc(64);
-    npf_snprintf(dev_name, 64, "pci:%02x:%02x.%d", b, s, f);
+    char *name = kzalloc(64);
+    npf_snprintf(name, 64, "pci:%02x:%02x.%d", b, s, f);
 
-    device_t *dev = device_create(dev_name);
+    device_t *dev = device_create(name);
 
     dev->vendor_id = pdev->vendor_id;
     dev->device_id = pdev->device_id;
@@ -105,10 +105,19 @@ static void pci_create_device(bus_t *bus, uint8_t b, uint8_t s, uint8_t f) {
     dev->subclass = pdev->subclass;
     dev->prog_if = pdev->prog_if;
 
+    if (irq_line != 0xFF && irq_line != 0x00)
+        device_add_irq(dev, irq_line);
+
     dev->data = pdev;
     pdev->dev = dev;
 
-    debug("pci: %04x:%04x class=%02x subclass=%02x func=%d\n", pdev->vendor_id, pdev->device_id, pdev->class_code, pdev->subclass, pdev->func);
+    debug("pci: %04x:%04x class=%02x subclass=%02x func=%d\n",
+        pdev->vendor_id,
+        pdev->device_id,
+        pdev->class_code,
+        pdev->subclass,
+        pdev->func
+    );
 
     bus_device_add(bus, dev);
 }
