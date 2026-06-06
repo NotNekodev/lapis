@@ -2,10 +2,11 @@
 #include "arch/interrupts/irq.h"
 #include "dev/bus.h"
 #include "dev/pci.h"
-#include "uacpi/acpi.h"
+#include "fs/ramfs/ramfs.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"
+#include "util/errno.h"
 #include <arch/gdt/gdt.h>
 #include <arch/interrupts/idt.h>
 #include <arch/interrupts/isr.h>
@@ -27,6 +28,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <limine.h>
+#include <util/memory.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -159,6 +161,42 @@ void kmain(void) {
     info("acpi: initialization complete\n");
 
     pci_init(&pci_bus);
+
+    ramfs_init();
+
+    vfs_mount(NULL, "ramfs", "/", NULL);
+
+    vfs_mkdir("/dev", 0755);
+
+    vfs_create("/test.txt", 0644);
+
+    kfile_t *fw;
+    if (kopen("/test.txt", O_WRONLY, 0, &fw) != EOK) {
+        error("failed to open /test.txt for writing\n");
+    } else {
+        const char *msg = "Hello from Lapis!\n";
+        if (kwrite(fw, (void *)msg, strlen(msg)) < 0) {
+            error("failed to write to /test.txt\n");
+        }
+        kclose(fw);
+    }
+
+    kfile_t *f;
+    if (kopen("/test.txt", O_RDONLY, 0, &f) != EOK) {
+        error("failed to open /test.txt\n");
+    } else {
+        char buf[128];
+        size_t bytes = kread(f, buf, sizeof(buf) - 1);
+        if (bytes < 0) {
+            error("failed to read from /test.txt\n");
+        } else {
+            buf[bytes] = '\0';
+            info("read from /test.txt: %s\n", buf);
+        }
+        kclose(f);
+    }
+
+    fs_list("/", 10);
 
     hcf();
 }

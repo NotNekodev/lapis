@@ -1,3 +1,4 @@
+#include "mm/kheap.h"
 #include <util/memory.h>
 
 #include <stdint.h>
@@ -63,10 +64,156 @@ int strcmp(const char *s1, const char *s2) {
     return (unsigned char)*s1 - (unsigned char)*s2;
 }
 
+int strncmp(const char *s1, const char *s2, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        if (s1[i] != s2[i]) {
+            return (unsigned char)s1[i] - (unsigned char)s2[i];
+        }
+        if (s1[i] == '\0') {
+            return 0;
+        }
+    }
+    return 0;
+}
+
 size_t strlen(const char *str) {
     size_t len = 0;
     while (str[len]) {
         len++;
     }
     return len;
+}
+
+int strcpy(char *dest, const char *src) {
+    size_t i = 0;
+    while (src[i]) {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+    return 0;
+}
+
+int strncpy(char *dest, const char *src, size_t n) {
+    size_t i = 0;
+    while (i < n && src[i]) {
+        dest[i] = src[i];
+        i++;
+    }
+    if (i < n) {
+        dest[i] = '\0';
+    }
+    return 0;
+}
+
+int strcat(char *dest, const char *src) {
+    size_t dest_len = strlen(dest);
+    size_t i = 0;
+    while (src[i]) {
+        dest[dest_len + i] = src[i];
+        i++;
+    }
+    dest[dest_len + i] = '\0';
+    return 0;
+}
+
+
+char* strdup(char *str) {
+    char *ret = kzalloc(strlen(str) + 1);
+    if (!ret) {
+        return NULL;
+    }
+
+    memcpy(ret, str, strlen(str) + 1);
+
+    return ret;
+}
+
+char *strchr(const char *str, int c) {
+    while (*str) {
+        if (*str == (char)c) {
+            return (char *)str;
+        }
+        str++;
+    }
+    return (c == '\0') ? (char *)str : NULL;
+}
+
+char *strrchr(const char *s, int c) {
+    const char *last = NULL;
+    while (*s) {
+        if (*s == (char)c) {
+            last = s;
+        }
+        s++;
+    }
+    return (char *)((c == '\0') ? s : last);
+}
+
+char *strtok(char *str, const char *delim) {
+    static char *next = NULL;
+
+    if (str) {
+        next = str;
+    }
+    if (!next) {
+        return NULL;
+    }
+
+    while (*next && strchr(delim, *next)) {
+        next++;
+    }
+
+    if (*next == '\0') {
+        return NULL;
+    }
+
+    char *token_start = next;
+
+    while (*next && !strchr(delim, *next)) {
+        next++;
+    }
+
+    if (*next) {
+        *next = '\0';
+        next++;
+    } else {
+        next = NULL;
+    }
+
+    return token_start;
+}
+
+char *strtok_r(char *str, const char *delim, char **saveptr) {
+    char *next;
+
+    if (str) {
+        next = str;
+    } else {
+        next = *saveptr;
+    }
+
+    while (*next && strchr(delim, *next)) {
+        next++;
+    }
+
+    if (*next == '\0') {
+        return NULL;
+    }
+
+    char *token_start = next;
+
+    while (*next && !strchr(delim, *next)) {
+        next++;
+    }
+
+    if (*next) {
+        *next = '\0';
+        next++;
+    } else {
+        next = NULL;
+    }
+
+    *saveptr = next;
+    return token_start;
 }
