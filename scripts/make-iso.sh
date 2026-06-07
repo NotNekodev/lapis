@@ -18,6 +18,7 @@ rm -rf "$iso_root"
 mkdir -p "$iso_root/boot/limine" "$iso_root/EFI/BOOT"
 
 cp -v "$kernel" "$iso_root/boot/lapis"
+cp -v "$build/initrd.cpio" "$iso_root/boot/initrd.cpio"
 cp -v "$root/config/limine.conf" \
   "$root/limine-binary/limine-bios.sys" \
   "$root/limine-binary/limine-bios-cd.bin" \

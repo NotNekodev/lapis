@@ -42,11 +42,24 @@ edk2_stamp = custom_target(
   build_by_default: false,
 )
 
+initrd = custom_target(
+  'initrd',
+  input: kernel_bin,
+  output: 'initrd.cpio',
+  command: [
+    sh,
+    join_paths(meson.project_source_root(), 'scripts', 'make-initrd.sh'),
+    meson.project_source_root() + '/initrd',
+    meson.current_build_dir() + '/initrd.cpio',
+  ],
+  build_by_default: true,
+)
+
 iso = custom_target(
   'iso',
   input: kernel_bin,
   output: image_name + '.iso',
-  depends: limine_stamp,
+  depends: [limine_stamp, initrd],
   command: [
     sh,
     join_paths(meson.project_source_root(), 'scripts', 'make-iso.sh'),
@@ -62,7 +75,7 @@ hdd = custom_target(
   'hdd',
   input: kernel_bin,
   output: image_name + '.hdd',
-  depends: limine_stamp,
+  depends: [limine_stamp, initrd],
   command: [
     sh,
     join_paths(meson.project_source_root(), 'scripts', 'make-hdd.sh'),

@@ -21,6 +21,7 @@ PATH="$PATH:/usr/sbin:/sbin" sgdisk "$output" -n 1:2048 -t 1:ef00 -m 1
 mformat -i "$output@@1M"
 mmd -i "$output@@1M" ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
 mcopy -i "$output@@1M" "$kernel" ::/boot/lapis
+mcopy -i "$output@@1M" "$build/initrd.cpio" ::/boot/initrd.cpio
 mcopy -i "$output@@1M" "$root/config/limine.conf" "$root/limine-binary/limine-bios.sys" ::/boot/limine
 mcopy -i "$output@@1M" "$root/limine-binary/BOOTX64.EFI" ::/EFI/BOOT
 mcopy -i "$output@@1M" "$root/limine-binary/BOOTIA32.EFI" ::/EFI/BOOT
