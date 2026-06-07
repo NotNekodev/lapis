@@ -98,6 +98,7 @@ sources = files(
   'src/fs/vfs/vfs.c',
   'src/fs/vfs/kfile.c',
   'src/fs/ramfs/ramfs.c',
+  'src/fs/initrd/cpio.c',
   'src/mm/pfn_db.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',

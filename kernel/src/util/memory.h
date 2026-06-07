@@ -2,6 +2,7 @@
 #define _MEMORY_H 1
 
 #include <stddef.h>
+#include <stdint.h>
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n);
 void *memset(void *s, int c, size_t n);
@@ -20,5 +21,6 @@ char *strchr(const char *s, int c);
 char *strrchr(const char *s, int c);
 char *strtok(char *str, const char *delim);
 char *strtok_r(char *str, const char *delim, char **saveptr);
+uint64_t strtoull(const char *str, const char **endptr, int base);
 
 #endif // _MEMORY_H

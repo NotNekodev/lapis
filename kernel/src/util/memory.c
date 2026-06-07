@@ -193,6 +193,9 @@ char *strtok_r(char *str, const char *delim, char **saveptr) {
         next = *saveptr;
     }
 
+    if (!next)
+        return NULL;
+
     while (*next && strchr(delim, *next)) {
         next++;
     }
@@ -216,4 +219,45 @@ char *strtok_r(char *str, const char *delim, char **saveptr) {
 
     *saveptr = next;
     return token_start;
+}
+
+uint64_t strtoull(const char *str, const char **endptr, int base) {
+    uint64_t result = 0;
+    int digit;
+
+    while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\v' ||
+           *str == '\f' || *str == '\r') {
+        str++;
+    }
+
+    if ((base == 0 || base == 16) && str[0] == '0' &&
+        (str[1] == 'x' || str[1] == 'X')) {
+        base  = 16;
+        str  += 2;
+    }
+
+    if (base == 0)
+        base = (str[0] == '0') ? 8 : 10;
+
+    while (*str) {
+        if (*str >= '0' && *str <= '9')
+            digit = *str - '0';
+        else if (*str >= 'a' && *str <= 'f')
+            digit = *str - 'a' + 10;
+        else if (*str >= 'A' && *str <= 'F')
+            digit = *str - 'A' + 10;
+        else
+            break;
+
+        if (digit >= base)
+            break;
+
+        result = result * base + digit;
+        str++;
+    }
+
+    if (endptr)
+        *endptr = str;
+
+    return result;
 }

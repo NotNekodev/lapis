@@ -2,6 +2,7 @@
 #include "arch/interrupts/irq.h"
 #include "dev/bus.h"
 #include "dev/pci.h"
+#include "fs/initrd/cpio.h"
 #include "fs/ramfs/ramfs.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
@@ -63,6 +64,12 @@ static volatile struct limine_rsdp_request rsdp_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_module_request module_request = {
+    .id = LIMINE_MODULE_REQUEST_ID,
+    .revision = 0
+};
+
 __attribute__((used, section(".limine_requests_start")))
 static volatile uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
@@ -75,6 +82,23 @@ static void apic_timer_irq(uint32_t irq, void *data, context_t *ctx) {
     (void)irq;
     (void)data;
     (void)ctx;
+}
+
+static int extract_initrd(void *data, size_t size, const char *dest_path) {
+    cpio_archive_t archive;
+    if (cpio_archive_parse(&archive, data, size) != 0) {
+        warn("Failed to parse CPIO archive\n");
+        return -1;
+    }
+
+    if (cpio_archive_extract(&archive, (char *)dest_path) != 0) {
+        warn("Failed to extract CPIO archive\n");
+        cpio_archive_free(&archive);
+        return -1;
+    }
+
+    cpio_archive_free(&archive);
+    return 0;
 }
 
 static bus_t pci_bus;
@@ -166,20 +190,20 @@ void kmain(void) {
 
     vfs_mount(NULL, "ramfs", "/", NULL);
 
-    vfs_mkdir("/dev", 0755);
+    if (module_request.response && module_request.response->module_count > 0) {
+        void *initrd_data = module_request.response->modules[0]->address;
+        size_t initrd_size = module_request.response->modules[0]->size;
 
-    vfs_create("/test.txt", 0644);
-
-    kfile_t *fw;
-    if (kopen("/test.txt", O_WRONLY, 0, &fw) != EOK) {
-        error("failed to open /test.txt for writing\n");
-    } else {
-        const char *msg = "Hello from Lapis!\n";
-        if (kwrite(fw, (void *)msg, strlen(msg)) < 0) {
-            error("failed to write to /test.txt\n");
+        if (extract_initrd(initrd_data, initrd_size, "/") != 0) {
+            critical("Failed to extract initrd\n");
+            hcf();
         }
-        kclose(fw);
+    } else {
+        critical("No initrd module provided, module response: %p\n", (void *)module_request.response);
+        hcf();
     }
+
+    vfs_mkdir("/dev", 0755);
 
     kfile_t *f;
     if (kopen("/test.txt", O_RDONLY, 0, &f) != EOK) {
