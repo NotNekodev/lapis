@@ -47,6 +47,20 @@ struct kterm_ctx terminal_ctx;
 struct limine_framebuffer *framebuffer = NULL;
 bool init = false;
 
+static inline uint32_t *fb_base(void) {
+    return (uint32_t *)framebuffer->address;
+}
+
+static inline uint32_t fb_pitch_pixels(void) {
+    return framebuffer->pitch / 4;
+}
+
+static inline uint32_t rgb_to_pixel(uint32_t r, uint32_t g, uint32_t b) {
+    return (r << framebuffer->red_mask_shift) |
+           (g << framebuffer->green_mask_shift) |
+           (b << framebuffer->blue_mask_shift);
+}
+
 uint32_t bg_color[3] = {0x00, 0x00, 0x00};
 uint32_t fg_color[3] = {0xFF, 0xFF, 0xFF};
 
@@ -197,13 +211,14 @@ void kterm_init() {
 void kterm_cls() {
     if (!framebuffer || !framebuffer->address)
         return;
+    uint32_t *fb = fb_base();
+    uint32_t pitch = fb_pitch_pixels();
+    uint32_t bg_pixel = rgb_to_pixel(bg_color[0], bg_color[1], bg_color[2]);
 
     for (uint64_t y = 0; y < framebuffer->height; y++) {
+        uint32_t row_base = y * pitch;
         for (uint64_t x = 0; x < framebuffer->width; x++) {
-            uint32_t *fb = (uint32_t *)framebuffer->address;
-            fb[y * framebuffer->pitch / 4 + x] = bg_color[0] << framebuffer->red_mask_shift |
-                                              bg_color[1] << framebuffer->green_mask_shift |
-                                              bg_color[2] << framebuffer->blue_mask_shift;
+            fb[row_base + x] = bg_pixel;
         }
     }
 
@@ -241,15 +256,16 @@ void kterm_render_cursor(uint64_t x, uint64_t y) {
 
     uint64_t px = x * FONT_WIDTH;
     uint64_t py = y * psf->height;
+    uint32_t *fb = fb_base();
+    uint32_t pitch = fb_pitch_pixels();
 
     for (uint64_t i = 0; i < FONT_WIDTH; i++) {
         for (uint64_t j = 0; j < psf->height; j++) {
-            uint32_t *fb = (uint32_t *)framebuffer->address;
-            uint32_t color = fb[(py + j) * framebuffer->pitch / 4 + (px + i)];
+            uint32_t color = fb[(py + j) * pitch + (px + i)];
             uint32_t inverted_color = ((color >> framebuffer->red_mask_shift) & 0xFF) << framebuffer->red_mask_shift |
                                       ((color >> framebuffer->green_mask_shift) & 0xFF) << framebuffer->green_mask_shift |
                                       ((color >> framebuffer->blue_mask_shift) & 0xFF) << framebuffer->blue_mask_shift;
-            fb[(py + j) * framebuffer->pitch / 4 + (px + i)] = inverted_color;
+            fb[(py + j) * pitch + (px + i)] = inverted_color;
         }
     }
 
