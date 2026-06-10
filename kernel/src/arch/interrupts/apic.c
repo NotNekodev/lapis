@@ -143,7 +143,7 @@ static void apic_route_irq(uint8_t source, uint8_t vector) {
     ioapic_write(io, reg + 1, high);
     ioapic_write(io, reg, low);
 
-    info("apic: routed IRQ source=%u gsi=%u pin=%u vector=0x%02x\n",
+    debug("apic: routed IRQ source=%u gsi=%u pin=%u vector=0x%02x\n",
          source, gsi, pin, vector);
 }
 
@@ -164,7 +164,7 @@ static void apic_mask_irq(uint8_t source) {
     low |= IOAPIC_REDIR_MASK;
     ioapic_write(io, reg, low);
 
-    info("apic: masked IRQ source=%u gsi=%u pin=%u\n", source, gsi, pin);
+    debug("apic: masked IRQ source=%u gsi=%u pin=%u\n", source, gsi, pin);
 }
 
 static void apic_spurious_isr(isr_t *self, context_t *ctx) {
@@ -180,7 +180,7 @@ static void apic_map_mmio(uint64_t phys, uint64_t size) {
     uint64_t vaddr = (uint64_t)PHYS_TO_VIRT(phys);
     uint64_t npages = ALIGN_UP(size, PAGE_SIZE) / PAGE_SIZE;
 
-    info("apic: mapping mmio phys=0x%.16llx vaddr=0x%.16llx pages=%llu\n",
+    debug("apic: mapping mmio phys=0x%.16llx vaddr=0x%.16llx pages=%llu\n",
          phys, vaddr, npages);
 
     if (kernel_info.kernel_pt) {
@@ -195,7 +195,7 @@ static void ioapic_mask_all(void) {
         uint32_t ver = ioapic_read(io, IOAPIC_REG_VER);
         uint32_t max_redir = (ver >> 16) & 0xFF;
 
-        info("apic: ioapic id=%u gsi_base=%u ver=0x%08x max_redir=%u\n",
+        debug("apic: ioapic id=%u gsi_base=%u ver=0x%08x max_redir=%u\n",
              io->id, io->gsi_base, ver, max_redir);
 
         for (uint32_t pin = 0; pin <= max_redir; pin++) {
@@ -211,10 +211,10 @@ static void lapic_enable(uint64_t lapic_phys) {
     uint64_t apic_base = _rdmsr(IA32_APIC_BASE_MSR);
     uint64_t msr_base = apic_base & 0xFFFFF000;
 
-    info("apic: IA32_APIC_BASE before=0x%.16llx\n", apic_base);
+    debug("apic: IA32_APIC_BASE before=0x%.16llx\n", apic_base);
 
     if (msr_base != lapic_phys) {
-        info("apic: updating LAPIC base from 0x%.16llx to 0x%.16llx\n", msr_base, lapic_phys);
+        debug("apic: updating LAPIC base from 0x%.16llx to 0x%.16llx\n", msr_base, lapic_phys);
         apic_base &= ~0xFFFFF000ULL;
         apic_base |= lapic_phys & 0xFFFFF000ULL;
     }
@@ -222,7 +222,7 @@ static void lapic_enable(uint64_t lapic_phys) {
     apic_base |= IA32_APIC_BASE_ENABLE;
     _wrmsr(IA32_APIC_BASE_MSR, apic_base);
 
-    info("apic: IA32_APIC_BASE after=0x%.16llx\n", _rdmsr(IA32_APIC_BASE_MSR));
+    debug("apic: IA32_APIC_BASE after=0x%.16llx\n", _rdmsr(IA32_APIC_BASE_MSR));
 
     lapic_virt = (uintptr_t)PHYS_TO_VIRT(lapic_phys);
 
@@ -267,15 +267,15 @@ int apic_init(void) {
             case ACPI_MADT_ENTRY_TYPE_LAPIC: {
                 struct acpi_madt_lapic *lapic_entry = (struct acpi_madt_lapic *)entry;
                 if (lapic_entry->flags & ACPI_PIC_ENABLED) {
-                    info("apic: found LAPIC with ACPI ID %d, APIC ID %d\n", lapic_entry->uid, lapic_entry->id);
+                    debug("apic: found LAPIC with ACPI ID %d, APIC ID %d\n", lapic_entry->uid, lapic_entry->id);
                 } else {
-                    info("apic: found disabled LAPIC with ACPI ID %d, APIC ID %d\n", lapic_entry->uid, lapic_entry->id);
+                    debug("apic: found disabled LAPIC with ACPI ID %d, APIC ID %d\n", lapic_entry->uid, lapic_entry->id);
                 }
                 break;
             }
             case ACPI_MADT_ENTRY_TYPE_IOAPIC: {
                 struct acpi_madt_ioapic *ioapic_entry = (struct acpi_madt_ioapic *)entry;
-                info("apic: found IOAPIC with ID %d at GSI base 0x%x\n", ioapic_entry->id, ioapic_entry->gsi_base);
+                debug("apic: found IOAPIC with ID %d at GSI base 0x%x\n", ioapic_entry->id, ioapic_entry->gsi_base);
 
                 if (kernel_info.ioapic.ioapic_count < MAX_IOAPICS) {
                     kernel_info.ioapic.ioapics[kernel_info.ioapic.ioapic_count].id = ioapic_entry->id;
@@ -290,7 +290,7 @@ int apic_init(void) {
             }
             case ACPI_MADT_ENTRY_TYPE_INTERRUPT_SOURCE_OVERRIDE: {
                 struct acpi_madt_interrupt_source_override *iso_entry = (struct acpi_madt_interrupt_source_override *)entry;
-                info("apic: found ISO for bus %d, source %d, GSI %d, flags=0x%04x\n",
+                debug("apic: found ISO for bus %d, source %d, GSI %d, flags=0x%04x\n",
                      iso_entry->bus, iso_entry->source, iso_entry->gsi, iso_entry->flags);
 
                 if (kernel_info.ioapic.iso_count < MAX_ISO) {
@@ -305,18 +305,18 @@ int apic_init(void) {
             }
             case ACPI_MADT_ENTRY_TYPE_NMI_SOURCE: {
                 struct acpi_madt_nmi_source *nmi_source = (struct acpi_madt_nmi_source *)entry;
-                info("apic: found NMI source at GSI %d, flags=0x%04x\n", nmi_source->gsi, nmi_source->flags);
+                debug("apic: found NMI source at GSI %d, flags=0x%04x\n", nmi_source->gsi, nmi_source->flags);
                 break;
             }
             case ACPI_MADT_ENTRY_TYPE_LAPIC_NMI: {
                 struct acpi_madt_lapic_nmi *lapic_nmi = (struct acpi_madt_lapic_nmi *)entry;
-                info("apic: found LAPIC NMI for UID %d on LINT%d, flags=0x%04x\n",
+                debug("apic: found LAPIC NMI for UID %d on LINT%d, flags=0x%04x\n",
                      lapic_nmi->uid, lapic_nmi->lint, lapic_nmi->flags);
                 break;
             }
             case ACPI_MADT_ENTRY_TYPE_LAPIC_ADDRESS_OVERRIDE: {
                 struct acpi_madt_lapic_address_override *lapic_addr = (struct acpi_madt_lapic_address_override *)entry;
-                info("apic: found LAPIC address override, new address is 0x%.16llx\n", lapic_addr->address);
+                debug("apic: found LAPIC address override, new address is 0x%.16llx\n", lapic_addr->address);
                 lapic_phys = lapic_addr->address;
                 break;
             }
@@ -331,12 +331,12 @@ int apic_init(void) {
         lapic_phys = _rdmsr(IA32_APIC_BASE_MSR) & 0xFFFFF000ULL;
     }
 
-    info("apic: LAPIC physical address is 0x%.16llx\n", lapic_phys);
+    debug("apic: LAPIC physical address is 0x%.16llx\n", lapic_phys);
 
     apic_map_mmio(lapic_phys, LAPIC_SIZE);
 
     for (size_t i = 0; i < kernel_info.ioapic.ioapic_count; i++) {
-        info("apic: registering IOAPIC id=%u gsi_base=%u phys=0x%.16llx\n",
+        debug("apic: registering IOAPIC id=%u gsi_base=%u phys=0x%.16llx\n",
              kernel_info.ioapic.ioapics[i].id,
              kernel_info.ioapic.ioapics[i].gsi_base,
              (uint64_t)kernel_info.ioapic.ioapics[i].phys_addr);
@@ -344,7 +344,7 @@ int apic_init(void) {
     }
 
     if (kernel_info.ioapic.iso_count == 0) {
-        info("apic: no interrupt source overrides present\n");
+        debug("apic: no interrupt source overrides present\n");
     }
 
     lapic_enable(lapic_phys);
@@ -408,7 +408,7 @@ void lapic_timer_init(uint8_t vector) {
     _sti();
 
     uint64_t start = _rdtsc();
-    info("lapic: tsc_start=%llu\n", start);
+    debug("lapic: tsc_start=%llu\n", start);
 
     uint64_t spins = 0;
     while (!lapic_done) {
@@ -420,7 +420,7 @@ void lapic_timer_init(uint8_t vector) {
     }
 
     uint64_t end = _rdtsc();
-    info("lapic: tsc_end=%llu delta=%llu\n", end, end - start);
+    debug("lapic: tsc_end=%llu delta=%llu\n", end, end - start);
 
     kernel_info.tsc_freq = end - start;
 
@@ -437,7 +437,7 @@ void lapic_timer_init(uint8_t vector) {
 
     uint32_t ticks_per_ms = lapic_delta / 100;
 
-    info("lapic: ticks per ms = %u\n", ticks_per_ms);
+    debug("lapic: ticks per ms = %u\n", ticks_per_ms);
 
     lapic_freq_hz = ticks_per_ms * 1000;
 

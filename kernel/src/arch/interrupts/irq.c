@@ -278,7 +278,7 @@ void irq_init(void) {
 
     spinlock_release(&irq_lock);
 
-    info("irq: initialized, vector range 0x%02x-0x%02x\n", IRQ_VECTOR_MIN, IRQ_VECTOR_MAX);
+    debug("irq: initialized, vector range 0x%02x-0x%02x\n", IRQ_VECTOR_MIN, IRQ_VECTOR_MAX);
 }
 
 int irq_request(uint32_t hwirq, irq_handler_t handler, void *data, const char *name) {
@@ -315,7 +315,7 @@ int irq_request(uint32_t hwirq, irq_handler_t handler, void *data, const char *n
 
     spinlock_release(&irq_lock);
 
-    info("irq: registered hwirq=%u vector=0x%02x name=%s\n", hwirq, vector, name ? name : "(null)");
+    debug("irq: registered hwirq=%u vector=0x%02x name=%s\n", hwirq, vector, name ? name : "(null)");
     return (int)irq;
 }
 
@@ -348,7 +348,7 @@ int irq_request_local(irq_handler_t handler, void *data, const char *name) {
 
     spinlock_release(&irq_lock);
 
-    info("irq: registered local vector=0x%02x name=%s\n", vector, name ? name : "(null)");
+    debug("irq: registered local vector=0x%02x name=%s\n", vector, name ? name : "(null)");
     return (int)irq;
 }
 

@@ -184,7 +184,7 @@ void kterm_set_fg(uint32_t rgb) {
 }
 
 
-static void render_screen() {
+static void render_screen(void) {
     for (uint64_t y = 0; y < terminal_ctx.rows; y++) {
         uint64_t real_row = (scroll_base + y) % MAX_ROWS;
         for (uint64_t x = 0; x < terminal_ctx.cols; x++) {
@@ -194,7 +194,7 @@ static void render_screen() {
     }
 }
 
-void kterm_init() {
+void kterm_init(void) {
     framebuffer = kernel_info.framebuffer;
     if (!framebuffer || !framebuffer->address)
         return;
@@ -208,7 +208,7 @@ void kterm_init() {
     init = true;
 }
 
-void kterm_cls() {
+void kterm_cls(void) {
     if (!framebuffer || !framebuffer->address)
         return;
     uint32_t *fb = fb_base();
@@ -274,7 +274,7 @@ void kterm_render_cursor(uint64_t x, uint64_t y) {
 }
 
 
-static void scroll_up_by_one() {
+static void scroll_up_by_one(void) {
     scroll_base = (scroll_base + 1) % MAX_ROWS;
 
     uint64_t new_line = (scroll_base + terminal_ctx.rows - 1) % MAX_ROWS;
