@@ -21,7 +21,7 @@
 #define error(format, ...)      log(LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
 #define critical(format, ...)   log(LOG_LEVEL_CRITICAL, format, ##__VA_ARGS__)
 
-#define PRIMARY_EARLY_BOOT_SINK_LEVEL_MASK_FLAGS (1 << LOG_SINK_LEVEL_DEBUG) | (1 << LOG_SINK_LEVEL_INFO) | (1 << LOG_SINK_LEVEL_WARN) | (1 << LOG_SINK_LEVEL_ERROR) | (1 << LOG_SINK_LEVEL_CRITICAL)
+#define PRIMARY_EARLY_BOOT_SINK_LEVEL_MASK_FLAGS ((1 << LOG_LEVEL_DEBUG) | (1 << LOG_LEVEL_INFO) | (1 << LOG_LEVEL_WARN) | (1 << LOG_LEVEL_ERROR) | (1 << LOG_LEVEL_CRITICAL))
 
 void log(int level, const char *format, ...);
 

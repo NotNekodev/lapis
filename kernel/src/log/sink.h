@@ -3,12 +3,6 @@
 
 #include <stddef.h>
 
-#define LOG_SINK_LEVEL_DEBUG    0
-#define LOG_SINK_LEVEL_INFO     1
-#define LOG_SINK_LEVEL_WARN     2
-#define LOG_SINK_LEVEL_ERROR    3
-#define LOG_SINK_LEVEL_CRITICAL 4
-
 typedef struct log_sink {
     int id;
     int level_mask; // bitmask of levels to log
