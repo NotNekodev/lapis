@@ -20,6 +20,11 @@ static inline void uart_wait_for_status(unsigned char mask) {
 }
 
 static inline void uart_putc(char c) {
+    if (c == '\n') {
+        uart_wait_for_status(UART_LSR_THRE);
+        _outb(UART_BASE + UART_THR, '\r');
+    }
+
     uart_wait_for_status(UART_LSR_THRE);
     _outb(UART_BASE + UART_THR, c);
 }
