@@ -7,7 +7,7 @@
 
 log_sink_t e9_sink = {
     .id = -1,
-    .level_mask = (1 << LOG_SINK_LEVEL_DEBUG) | (1 << LOG_SINK_LEVEL_INFO) | (1 << LOG_SINK_LEVEL_WARN) | (1 << LOG_SINK_LEVEL_ERROR) | (1 << LOG_SINK_LEVEL_CRITICAL),
+    .level_mask = PRIMARY_EARLY_BOOT_SINK_LEVEL_MASK_FLAGS,
     .name = E9_SINK_NAME,
     .write = e9_sink_write,
     .flush = e9_sink_flush,
@@ -22,47 +22,13 @@ static inline void e9_output_string(const char *str, int len) {
 }
 
 void e9_sink_write(const char *data, size_t len, int level) {
-    switch (level) {
-        case LOG_LEVEL_DEBUG:
-            e9_output_string("\033[1;35m", 7);
-            e9_output_string("dbg", 3);
-            e9_output_string("\033[0m", 4);
-            e9_output_string(":  ", 3);
-            e9_output_string(data, len);
-            break;
-        case LOG_LEVEL_INFO:
-            e9_output_string("\033[1;34m", 7);
-            e9_output_string("info", 4);
-            e9_output_string("\033[0m", 4);
-            e9_output_string(": ", 2);
-            e9_output_string(data, len);
-            break;
-        case LOG_LEVEL_WARN:
-            e9_output_string("\033[1;33m", 7);
-            e9_output_string("warn", 4);
-            e9_output_string("\033[0m", 4);
-            e9_output_string(": ", 2);
-            e9_output_string(data, len);
-            break;
-        case LOG_LEVEL_ERROR:
-            e9_output_string("\033[1;31m", 7);
-            e9_output_string("err", 3);
-            e9_output_string("\033[0m", 4);
-            e9_output_string(":  ", 3);
-            e9_output_string(data, len);
-            break;
-        case LOG_LEVEL_CRITICAL:
-            e9_output_string("\033[1;31m", 7);
-            e9_output_string("crit", 4);
-            e9_output_string(": ", 2);
-            e9_output_string(data, len);
-            e9_output_string("\033[0m", 4);
-            break;
-    }
+    output_log_prefix(e9_output_string, level);
+    e9_output_string(data, len);
+    output_log_suffix(e9_output_string, level);
 }
 
 void e9_sink_flush(void) {
-    ;;
+    ; // no op
 }
 
 int e9_sink_init(void) {

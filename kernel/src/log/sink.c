@@ -12,26 +12,25 @@ int register_sink(log_sink_t *sink) { // returns the id of the registered sink, 
     if (sink == NULL || sink->write == NULL || sink->flush == NULL) {
         return -1;
     }
-
     sink->id = id_counter++;
     sink->next = NULL;
 
-    while (sinks_head != NULL) {
-        if (sinks_head->id == sink->id) {
-            return -1; // son, how did you do this :sob:
-        }
+    log_sink_t *curr = sinks_head;
 
-        if (sinks_head->next == NULL) {
+    while (curr != NULL) {
+        if (curr->id == sink->id) {
+            return -1;
+        }
+        if (curr->next == NULL) {
             break;
         }
-
-        sinks_head = sinks_head->next;
+        curr = curr->next;
     }
 
-    if (sinks_head == NULL) {
+    if (curr == NULL) {
         sinks_head = sink;
     } else {
-        sinks_head->next = sink;
+        curr->next = sink;
     }
 
     return sink->id;

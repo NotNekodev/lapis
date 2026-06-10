@@ -78,6 +78,7 @@ sources = files(
   'src/log/sink.c',
   'src/log/log.c',
   'src/log/sinks/e9.c',
+  'src/log/sinks/uart16550.c',
   'src/mm/pmm.c',
   'src/mm/vmm.c',
   'src/mm/paging.c',
