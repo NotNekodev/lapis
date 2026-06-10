@@ -4,6 +4,7 @@
 #include "dev/pci.h"
 #include "fs/initrd/cpio.h"
 #include "fs/ramfs/ramfs.h"
+#include "log/ktty/psf.h"
 #include "uacpi/event.h"
 #include "uacpi/status.h"
 #include "uacpi/uacpi.h"
@@ -125,6 +126,8 @@ void kmain(void) {
 
     uart_sink_init();
     e9_sink_init();
+
+    psf_load_defaults();
 
     smp_prepare();
 
