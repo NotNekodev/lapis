@@ -22,6 +22,7 @@
 
 #include <kernel.h>
 
+#include <log/sinks/uart16550.h>
 #include <log/sinks/e9.h>
 #include <log/log.h>
 
@@ -122,6 +123,7 @@ void kmain(void) {
     kernel_info.kaddr_phys = executable_address_request.response->physical_base;
     kernel_info.rsdp_addr = (uint64_t)(uintptr_t)rsdp_request.response->address;
 
+    uart_sink_init();
     e9_sink_init();
 
     smp_prepare();
