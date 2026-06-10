@@ -15,16 +15,10 @@ log_sink_t e9_sink = {
     .next = NULL
 };
 
-static inline void e9_output_string(const char *str, int len) {
+void e9_sink_write(const char *data, size_t len) {
     while (len--) {
-        _outb(0xe9, *str++);
+        _outb(0xe9, *data++);
     }
-}
-
-void e9_sink_write(const char *data, size_t len, int level) {
-    output_log_prefix(e9_output_string, level);
-    e9_output_string(data, len);
-    output_log_suffix(e9_output_string, level);
 }
 
 void e9_sink_flush(void) {
@@ -32,9 +26,5 @@ void e9_sink_flush(void) {
 }
 
 int e9_sink_init(void) {
-    int id = register_sink(&e9_sink);
-    if (id < 0) {
-        return -1;
-    }
-    return 0;
+    return register_sink(&e9_sink);
 }

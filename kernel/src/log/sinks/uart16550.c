@@ -30,10 +30,8 @@ static void uart_output_string(const char *str, int len) {
     }
 }
 
-void uart_sink_write(const char *data, size_t len, int level) {
-    output_log_prefix(uart_output_string, level);
+void uart_sink_write(const char *data, size_t len) {
     uart_output_string(data, len);
-    output_log_suffix(uart_output_string, level);
 }
 
 void uart_sink_flush(void) {

@@ -16,7 +16,7 @@
 #define UART_LSR_THRE 0x20 // transmitter holding register empty
 #define UART_LSR_TEMT 0x40 // transmitter shift register empty
 
-void uart_sink_write(const char *data, size_t len, int level);
+void uart_sink_write(const char *data, size_t len);
 void uart_sink_flush(void);
 
 int uart_sink_init(void);
