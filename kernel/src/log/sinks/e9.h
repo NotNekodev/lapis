@@ -7,7 +7,7 @@
 
 extern log_sink_t e9_sink;
 
-void e9_sink_write(const char *data, size_t len, int level);
+void e9_sink_write(const char *data, size_t len);
 void e9_sink_flush(void);
 
 int e9_sink_init(void);

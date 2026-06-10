@@ -1,6 +1,8 @@
 #ifndef _LOG_H
 #define _LOG_H 1
 
+#include <stddef.h>
+
 #define LOG_LEVEL_DEBUG    0
 #define LOG_LEVEL_INFO     1
 #define LOG_LEVEL_WARN     2
@@ -25,7 +27,7 @@
 
 void log(int level, const char *format, ...);
 
-static inline void output_log_prefix(void (*out_fn)(const char*, int), int level) {
+static inline void output_log_prefix(void (*out_fn)(const char*, size_t len), int level) {
     switch (level) {
         case LOG_LEVEL_DEBUG:
             out_fn(LOG_LABEL_DEBUG_PREFIX);
@@ -47,7 +49,7 @@ static inline void output_log_prefix(void (*out_fn)(const char*, int), int level
     }
 }
 
-static inline void output_log_suffix(void (*out_fn)(const char*, int), int level) {
+static inline void output_log_suffix(void (*out_fn)(const char*, size_t len), int level) {
     switch (level) {
         case LOG_LEVEL_CRITICAL:
             out_fn(LOG_LABEL_CRIT_SUFFIX);

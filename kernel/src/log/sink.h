@@ -2,6 +2,7 @@
 #define _SINK_H 1
 
 #include <stddef.h>
+#include "log.h"
 
 typedef struct log_sink {
     int id;
@@ -9,13 +10,19 @@ typedef struct log_sink {
 
     char name[32]; // readable identifier
 
-    void (*write)(const char *data, size_t len, int level);
+    void (*write)(const char *data, size_t len);
     void (*flush)(void);
 
     void* private;
 
     struct log_sink *next;
 } log_sink_t;
+
+static inline void pretty_sink_write(log_sink_t *sink, const char *data, size_t len, int level) {
+    output_log_prefix(sink->write, level);
+    sink->write(data, len);
+    output_log_suffix(sink->write, level);
+}
 
 int register_sink(log_sink_t *sink); // returns the id of the registered sink, or -1 on failure
 void unregister_sink(int id);
