@@ -73,7 +73,7 @@ _get_rflags:
 
 global _set_rflags
 _set_rflags:
-    push rdi 
+    push rdi
 
     popfq
 
