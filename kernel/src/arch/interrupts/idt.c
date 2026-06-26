@@ -112,10 +112,17 @@ idtr_t idtr = {
 };
 
 void exception_isr(isr_t* self, context_t *ctx) {
+    _cli();
 	if ((self->id & 0xff) < 19) {
 		error("Exception %d: %s @ %p\n", self->id & 0xff, exceptions[self->id & 0xff], (void *)ctx->rip);
+		register_dump(LOG_LEVEL_CRITICAL, ctx);
+		stack_trace(LOG_LEVEL_CRITICAL, ctx);
+		hcf();
 	} else {
 		error("Exception %d: Unknown @ %p\n", self->id & 0xff, (void *)ctx->rip);
+		register_dump(LOG_LEVEL_CRITICAL, ctx);
+		stack_trace(LOG_LEVEL_CRITICAL, ctx);
+		hcf();
 	}
 }
 
