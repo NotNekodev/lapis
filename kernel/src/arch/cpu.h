@@ -1,3 +1,4 @@
+#include "arch/io.h"
 #ifndef _CPU_H
 #define _CPU_H 1
 
@@ -27,9 +28,17 @@ typedef struct cpu {
 	struct cpu *self;
 	uint32_t id;
 	uint32_t lapic_id; // they should not be different, but they can be? idk qwq
-    
+
 	uint64_t gdt[5];
+	ist_t tss;
 	isr_t isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
+
+	struct runqueue *rq;
+	struct thread *idle_thread;
+	struct thread *current_thread;
+	struct thread *zombie_to_reap;
+	volatile uint8_t need_resched;
+	volatile uint8_t in_sched;
 } cpu_t;
 
 cpu_t *get_bsp(void);

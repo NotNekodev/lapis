@@ -9,5 +9,7 @@ typedef unsigned int id_t;
 typedef unsigned int mode_t;
 typedef int64_t off_t;
 
+typedef int32_t pid_t;
+typedef int32_t tid_t;
 
 #endif // _TYPES_H

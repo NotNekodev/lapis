@@ -103,11 +103,18 @@ sources = files(
   'src/fs/vfs/kfile.c',
   'src/fs/ramfs/ramfs.c',
   'src/fs/initrd/cpio.c',
+  'src/sched/fd.c',
+  'src/sched/sched.c',
+  'src/sched/task.c',
+  'src/sched/waitqueue.c',
   'src/mm/pfn_db.c',
   'cc-runtime/src/cc-runtime.c',
   'src/arch/io.asm',
   'src/arch/gdt/gdt.asm',
   'src/arch/interrupts/idt.asm',
+  'src/sched/context.asm',
+  'src/sched/umode_test.asm',
+  'src/sched/umode_trampoline.asm'
 )
 
 # uacpi

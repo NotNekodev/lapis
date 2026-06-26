@@ -4,6 +4,10 @@
 #include <log/log.h>
 
 void spinlock_acquire(spinlock_t *lock) {
+    if (lock->irq_lock) {
+        lock->rflags = _get_rflags();
+        _cli();
+    }
     long me = get_current_cpuid();
 
     if (lock->locked && lock->owner == me) {
@@ -41,4 +45,8 @@ void spinlock_release(spinlock_t *lock) {
     lock->owner = -1;
 
     __atomic_store_n(&lock->locked, 0, __ATOMIC_RELEASE);
+
+    if (lock->irq_lock) {
+        _set_rflags(lock->rflags);
+    }
 }

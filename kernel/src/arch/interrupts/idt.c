@@ -3,6 +3,7 @@
 #include <arch/cpu.h>
 #include <arch/interrupts/isr.h>
 #include <arch/io.h>
+#include <sched/sched.h>
 
 #include <log/log.h>
 
@@ -31,7 +32,7 @@ static char *exceptions[] = {
 	"SIMD Exception"
 };
 
-static void register_dump(int log_level, context_t *ctx) {
+void register_dump(int log_level, context_t *ctx) {
 	log(log_level, "General Purpose Registers:\n");
 	log(log_level, "  RAX=0x%016llx rbx=0x%016llx rcx=0x%016llx rdx=0x%016llx\n", ctx->rax, ctx->rbx, ctx->rcx, ctx->rdx);
 	log(log_level, "  R8 =0x%016llx R9 =0x%016llx R10=0x%016llx R11=0x%016llx\n", ctx->r8, ctx->r9, ctx->r10, ctx->r11);
@@ -64,7 +65,7 @@ static void register_dump(int log_level, context_t *ctx) {
 	log(log_level, "  RSI=0x%016llx CR2=0x%016llx ERROR=0x%016llx VECTOR=0x%016llx\n", ctx->rsi, ctx->cr2, ctx->error, ctx->irq);
 }
 
-static void stack_trace(int log_level, context_t *ctx) {
+void stack_trace(int log_level, context_t *ctx) {
 	uint64_t *rbp = (uint64_t *)ctx->rbp;
 
 	log(LOG_LEVEL_CRITICAL, "rbp=%p\n", rbp);
@@ -119,7 +120,7 @@ void idt_reload(void) {
 
 	for (int i = 0; i < 0x20; i++) {
 		register_interrupt(i, exception_isr, NULL);
-	}	
+	}
 
 	_sti();
 
@@ -143,4 +144,6 @@ void interrupt_isr(int vec, context_t *ctx) {
 	if (isr->eoi) {
 		isr->eoi(isr);
 	}
+
+	sched_check_resched();
 }

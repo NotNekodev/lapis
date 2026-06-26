@@ -25,14 +25,29 @@ static struct limine_mp_response *mp_response;
 static uint32_t cpu_count;
 static volatile uint32_t cpu_started_count;
 
+void init_bsp_cpu(void) {
+    bsp_cpu_ptr = &cpu_list[0];
+    for (uint32_t i = 0; i < cpu_count; ++i) {
+        if (mp_response->cpus[i]->lapic_id == mp_response->bsp_lapic_id) {
+            bsp_cpu_ptr = &cpu_list[i];
+            break;
+        }
+    }
+
+    cpu_set_current(bsp_cpu_ptr);
+}
+
 static void ap_entry(struct limine_mp_info *info) {
     cpu_t *cpu = (cpu_t *)(uintptr_t)info->extra_argument;
     cpu_set_current(cpu);
     debug("smp: launched AP %u\n", cpu->id);
     gdt_reload();
     idt_reload();
+    extern void sched_init_ap(void);
+    sched_init_ap();
     __atomic_add_fetch(&cpu_started_count, 1, __ATOMIC_SEQ_CST);
-
+    extern void sched_idle_enter(void);
+    sched_idle_enter();
     for (;;) {
         _hlt();
     }
@@ -42,6 +57,7 @@ void smp_prepare(void) {
     if (mp_request.response == NULL || mp_request.response->cpu_count == 0) {
         bsp_cpu_ptr = &bsp_cpu_fallback;
         cpu_set_current(bsp_cpu_ptr);
+        cpu_count = 1;
         __atomic_store_n(&cpu_started_count, 1, __ATOMIC_SEQ_CST);
         return;
     }
@@ -61,15 +77,6 @@ void smp_prepare(void) {
         info->extra_argument = (uint64_t)cpu;
     }
 
-    bsp_cpu_ptr = &cpu_list[0];
-    for (uint32_t i = 0; i < cpu_count; ++i) {
-        if (mp_response->cpus[i]->lapic_id == mp_response->bsp_lapic_id) {
-            bsp_cpu_ptr = &cpu_list[i];
-            break;
-        }
-    }
-
-    cpu_set_current(bsp_cpu_ptr);
     __atomic_store_n(&cpu_started_count, 1, __ATOMIC_SEQ_CST);
 }
 
@@ -88,6 +95,10 @@ void smp_start_aps(void) {
     while (__atomic_load_n(&cpu_started_count, __ATOMIC_SEQ_CST) < cpu_count) {
         __asm__ volatile("pause");
     }
+}
+
+uint32_t smp_get_cpu_count(void) {
+    return cpu_count;
 }
 
 cpu_t *get_bsp(void) {

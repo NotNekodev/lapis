@@ -3,6 +3,8 @@
 #include <mm/pfn_db.h>
 #include <mm/page.h>
 
+#include <util/spinlock.h>
+
 #include <log/log.h>
 
 #include <stddef.h>
@@ -11,6 +13,8 @@
 static page_t *free_list;
 static uint64_t free_pages;
 static uint64_t total_pages;
+
+static spinlock_t pmm_lock = SPINLOCK_INIT("pmm_lock");
 
 static void free_list_remove(page_t *page) {
     page_t *prev = page->u2.prev;
@@ -43,11 +47,14 @@ void pmm_init(void) {
     page_t *db = pfn_db_getdb();
     uint64_t max_pfn = pfn_db_getmax();
 
+    spinlock_acquire(&pmm_lock);
+
     free_list = NULL;
     free_pages = 0;
     total_pages = max_pfn + 1;
 
     if (!db) {
+        spinlock_release(&pmm_lock);
         return;
     }
 
@@ -64,10 +71,15 @@ void pmm_init(void) {
             page->u2.prev = NULL;
         }
     }
+
+    spinlock_release(&pmm_lock);
 }
 
 page_t *pmm_alloc_page(void) {
+    spinlock_acquire(&pmm_lock);
+
     if (!free_list) {
+        spinlock_release(&pmm_lock);
         return NULL;
     }
 
@@ -83,6 +95,7 @@ page_t *pmm_alloc_page(void) {
     page->refcount = 1;
     page->u2.sharecount = 1;
 
+    spinlock_release(&pmm_lock);
     return page;
 }
 
@@ -100,6 +113,8 @@ void pmm_page_retain(page_t *page) {
         return;
     }
 
+    spinlock_acquire(&pmm_lock);
+
     if (is_page_free(page)) {
         free_list_remove(page);
         if (free_pages > 0) {
@@ -113,19 +128,30 @@ void pmm_page_retain(page_t *page) {
     if (page->refcount == 1) {
         page->u2.sharecount = 1;
     }
+
+    spinlock_release(&pmm_lock);
 }
 
 void pmm_page_release(page_t *page) {
-    if (!page || page->refcount == 0) {
+    if (!page) {
+        return;
+    }
+
+    spinlock_acquire(&pmm_lock);
+
+    if (page->refcount == 0) {
+        spinlock_release(&pmm_lock);
         return;
     }
 
     page->refcount--;
     if (page->refcount > 0) {
+        spinlock_release(&pmm_lock);
         return;
     }
 
     if (is_page_reserved(page)) {
+        spinlock_release(&pmm_lock);
         return;
     }
 
@@ -137,12 +163,16 @@ void pmm_page_release(page_t *page) {
         free_list_push(page);
         free_pages++;
     }
+
+    spinlock_release(&pmm_lock);
 }
 
 void pmm_page_share(page_t *page) {
     if (!page) {
         return;
     }
+
+    spinlock_acquire(&pmm_lock);
 
     if (!is_page_shared(page)) {
         page->flags |= PAGE_SHARED;
@@ -152,6 +182,8 @@ void pmm_page_share(page_t *page) {
     }
 
     page->u2.sharecount++;
+
+    spinlock_release(&pmm_lock);
 }
 
 void pmm_page_unshare(page_t *page) {
@@ -159,7 +191,10 @@ void pmm_page_unshare(page_t *page) {
         return;
     }
 
+    spinlock_acquire(&pmm_lock);
+
     if (!is_page_shared(page)) {
+        spinlock_release(&pmm_lock);
         return;
     }
 
@@ -170,6 +205,8 @@ void pmm_page_unshare(page_t *page) {
     if (page->u2.sharecount <= 1) {
         page->flags &= ~PAGE_SHARED;
     }
+
+    spinlock_release(&pmm_lock);
 }
 
 void pmm_page_mark_cow(page_t *page) {
@@ -177,7 +214,9 @@ void pmm_page_mark_cow(page_t *page) {
         return;
     }
 
+    spinlock_acquire(&pmm_lock);
     page->flags |= PAGE_COW;
+    spinlock_release(&pmm_lock);
 }
 
 void pmm_page_clear_cow(page_t *page) {
@@ -185,11 +224,16 @@ void pmm_page_clear_cow(page_t *page) {
         return;
     }
 
+    spinlock_acquire(&pmm_lock);
     page->flags &= ~PAGE_COW;
+    spinlock_release(&pmm_lock);
 }
 
 uint64_t pmm_free_pages(void) {
-    return free_pages;
+    spinlock_acquire(&pmm_lock);
+    uint64_t v = free_pages;
+    spinlock_release(&pmm_lock);
+    return v;
 }
 
 uint64_t pmm_total_pages(void) {
@@ -204,6 +248,8 @@ page_t *pmm_alloc_pages(size_t count) {
     if (count == 1) {
         return pmm_alloc_page();
     }
+
+    spinlock_acquire(&pmm_lock);
 
     page_t *db = pfn_db_getdb();
     uint64_t max_pfn = pfn_db_getmax();
@@ -221,36 +267,24 @@ page_t *pmm_alloc_pages(size_t count) {
 
         for (size_t j = 0; j < count; j++) {
             page_t *page = &db[i + j];
-            
-            page_t *prev = page->u2.prev;
-            page_t *next = page->u1.next;
 
-            if (prev) {
-                prev->u1.next = next;
-            } else {
-                free_list = next;
-            }
-
-            if (next) {
-                next->u2.prev = prev;
-            }
-
-            page->u1.next = NULL;
-            page->u2.prev = NULL;
+            free_list_remove(page);
 
             if (free_pages > 0) {
                 free_pages--;
             }
-            
+
             page->flags &= ~(PAGE_FREE | PAGE_RESERVED | PAGE_SHARED | PAGE_COW);
             page->flags |= PAGE_ALLOCATED;
             page->refcount = 1;
             page->u2.sharecount = 1;
         }
 
+        spinlock_release(&pmm_lock);
         return &db[i];
     }
 
+    spinlock_release(&pmm_lock);
     return NULL;
 }
 
@@ -261,8 +295,8 @@ void pmm_pages_release(page_t *page, size_t count) {
 }
 
 void pmm_dump_stats(void) {
-    debug("pmm: FREE pages: %llu / %llu\n", free_pages, total_pages);
-    debug("pmm: FREE bytes: %llu\n", free_pages * PAGE_SIZE);
+    debug("pmm: FREE pages: %llu / %llu\n", pmm_free_pages(), total_pages);
+    debug("pmm: FREE bytes: %llu\n", pmm_free_pages() * PAGE_SIZE);
 }
 
 void pmm_stress_test(void) {

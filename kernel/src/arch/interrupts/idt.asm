@@ -12,15 +12,14 @@ isr_%+ i:
     mov rbp, i
 
     jmp isr_common
-%assign i i + 1 
+%assign i i + 1
 %endrep
 
 isr_common:
-    cmp qword [rsp+24], 0x8 ; are we coming from userspace?
-    je .notneeded
-    ; do shit here lol
-    ; TODO: swapgs once we have that :P
-    .notneeded:
+    cmp qword [rsp+24], 0x8
+    je .notneeded1
+    swapgs
+    .notneeded1:
     push rbp ; irq num, remember :^)
     push rsi
     push rdi
@@ -44,7 +43,7 @@ isr_common:
 	mov rax, fs
 	push rax
 	mov rax, gs
-	push rax	
+	push rax
 	mov rdi, cr2
 	push rdi
 
@@ -65,12 +64,14 @@ isr_common:
 	push qword 0
 	.keep_going:
 	mov rbp, rsp
-
     cld ; yes sasdallas, i did it :face_holding_back_tears:
 	extern interrupt_isr
 	call interrupt_isr
 	cli
+	jmp isr_resume_from_context
 
+global isr_resume_from_context
+isr_resume_from_context:
     add rsp, 40 ; remove cr2, gs and fs
     pop rax
 	mov es, rax
@@ -98,6 +99,7 @@ isr_common:
 	je .notneeded2
 	swapgs
 	.notneeded2:
+	sti
 	o64 iret
 
 global _lidt

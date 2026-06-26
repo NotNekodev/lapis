@@ -6,7 +6,7 @@
 static int id_counter = 0;
 log_sink_t *sinks_head = NULL;
 
-spinlock_t output_lock = SPINLOCK_INIT("sink_output_lock");
+spinlock_t output_lock = SPINLOCK_IRQ_INIT("sink_output_lock");
 
 int register_sink(log_sink_t *sink) { // returns the id of the registered sink, or -1 on failure
     if (sink == NULL || sink->write == NULL || sink->flush == NULL) {

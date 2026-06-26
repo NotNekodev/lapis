@@ -1,3 +1,4 @@
+#include "arch/io.h"
 #ifndef _IDT_H
 #define _IDT_H 1
 
@@ -24,5 +25,8 @@ void _lidt(void *idtr);
 
 void idt_setup(void);
 void idt_reload(void);
+
+void stack_trace(int log_level, context_t *ctx);
+void register_dump(int log_level, context_t *ctx);
 
 #endif // _IDT_H

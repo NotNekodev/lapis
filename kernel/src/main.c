@@ -24,6 +24,9 @@
 
 #include <kernel.h>
 
+#include <sched/task.h>
+#include <sched/sched.h>
+
 #include <log/sinks/uart16550.h>
 #include <log/sinks/e9.h>
 #include <log/log.h>
@@ -84,7 +87,7 @@ kernel_info_t kernel_info;
 static void apic_timer_irq(uint32_t irq, void *data, context_t *ctx) {
     (void)irq;
     (void)data;
-    (void)ctx;
+    sched_tick(ctx);
 }
 
 static int extract_initrd(void *data, size_t size, const char *dest_path) {
@@ -106,6 +109,44 @@ static int extract_initrd(void *data, size_t size, const char *dest_path) {
 
 static bus_t pci_bus;
 
+static void kernel_test_thread(void *arg) {
+    const char *name = (const char *)arg;
+    for (;;) {
+        info("kernel_test_thread(%s): iteration on cpu %ld\n", name, get_current_cpuid());
+    }
+    info("kernel_test_thread(%s): done\n", name);
+}
+
+extern void usermode_test_entry(void);
+
+static void spawn_test_tasks(void) {
+    proc_t *kproc_a = proc_create_kernel("test-a");
+    thread_t *ta = thread_create(kproc_a, kernel_test_thread, (void *)"A", THREAD_CREATE_KERNEL);
+    ta->state = THREAD_READY;
+    sched_enqueue(ta);
+
+    proc_t *kproc_b = proc_create_kernel("test-b");
+    thread_t *tb = thread_create(kproc_b, kernel_test_thread, (void *)"B", THREAD_CREATE_KERNEL);
+    tb->state = THREAD_READY;
+    sched_enqueue(tb);
+
+    proc_t *uproc = proc_create_kernel("test-user");
+    uproc->flags |= PROC_FLAG_USER;
+    uproc->vmm = vmm_create();
+
+    vaddr_t code_page = vmm_map(uproc->vmm, 0x400000, PAGE_SIZE,
+        VFLAG_PRESENT | VFLAG_WRITABLE | VFLAG_USER | VFLAG_EXECUTABLE);
+
+    uint64_t code_phys = get_paddr((pte_t *)uproc->vmm->pml4, code_page);
+    memcpy(PHYS_TO_VIRT(code_phys), (void *)usermode_test_entry, PAGE_SIZE);
+
+    vaddr_t user_stack_top = proc_map_user_stack(uproc);
+
+    thread_t *ut = thread_create_user(uproc, code_page, user_stack_top);
+    ut->state = THREAD_READY;
+    sched_enqueue(ut);
+}
+
 void kmain(void) {
     __asm__ volatile("movq %%rsp, %0" : "=r"(kernel_info.kstack_top));
 
@@ -125,13 +166,13 @@ void kmain(void) {
     kernel_info.kaddr_phys = executable_address_request.response->physical_base;
     kernel_info.rsdp_addr = (uint64_t)(uintptr_t)rsdp_request.response->address;
 
+    init_bsp_cpu();
+
     uart_sink_init();
     e9_sink_init();
 
     psf_load_defaults();
     kterm_sink_init();
-
-    smp_prepare();
 
     gdt_reload();
 
@@ -166,6 +207,12 @@ void kmain(void) {
 
     irq_init();
     int irq = irq_request_local(apic_timer_irq, NULL, "lapic-timer");
+
+    sched_init();
+    task_create_init_proc();
+
+    smp_prepare();
+
     lapic_timer_init((uint8_t)irq);
     irq_enable(irq);
 
@@ -229,5 +276,9 @@ void kmain(void) {
 
     fs_list("/", 10);
 
-    hcf();
+    spawn_test_tasks();
+
+    sched_start();
+
+    sched_idle_enter();
 }

@@ -1,3 +1,5 @@
+#include "arch/interrupts/idt.h"
+#include "arch/io.h"
 #include <mm/paging.h>
 
 #include <mm/pmm.h>
@@ -552,7 +554,12 @@ void pf_handler(isr_t *self, context_t *ctx) {
     uint64_t error_code = ctx->error;
 
     if (vmm_pf_handler(fault_vmm, fault_addr, error_code) != EOK) {
+        _cli();
         critical("paging: unhandled page fault at ip=%.16llx with addr=0x%zx with error_code=0x%lx\n", ctx->rip, fault_addr, error_code);
+
+        register_dump(LOG_LEVEL_CRITICAL, ctx);
+		stack_trace(LOG_LEVEL_CRITICAL, ctx);
+
         hcf();
     }
 }
