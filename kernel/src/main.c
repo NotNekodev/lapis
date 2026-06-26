@@ -119,6 +119,14 @@ static void kernel_test_thread(void *arg) {
 
 extern void usermode_test_entry(void);
 
+void int80_test(isr_t *isr, context_t *ctx) {
+    (void)isr;
+    (void)ctx;
+
+    info("int80_test: called\n");
+    return;
+}
+
 static void spawn_test_tasks(void) {
     proc_t *kproc_a = proc_create_kernel("test-a");
     thread_t *ta = thread_create(kproc_a, kernel_test_thread, (void *)"A", THREAD_CREATE_KERNEL);
@@ -275,6 +283,8 @@ void kmain(void) {
     }
 
     fs_list("/", 10);
+
+    register_interrupt(0x80, int80_test, NULL);
 
     spawn_test_tasks();
 

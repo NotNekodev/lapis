@@ -96,7 +96,11 @@ void idt_setup(void) {
         idt[i].offset_low = addr & 0xFFFF;
         idt[i].selector = 0x8;
         idt[i].ist = 0; // TODO: maybe implement ist stuff in here
-        idt[i].flags = 0x8E;
+        if (i == 0x80) {
+            idt[i].flags = 0xEE;
+        } else {
+            idt[i].flags = 0x8E;
+        }
         idt[i].offset_mid = (addr >> 16) & 0xFFFF;
         idt[i].offset_high = (addr >> 32) & 0xFFFFFFFF;
     }
