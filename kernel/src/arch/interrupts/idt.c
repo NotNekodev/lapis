@@ -8,6 +8,7 @@
 #include <log/log.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 static char *exceptions[] = {
 	"Division by 0",
@@ -89,6 +90,7 @@ void stack_trace(int log_level, context_t *ctx) {
 }
 
 static idt_entry_t idt[256];
+extern void legacy_syscall_handler(void);
 
 void idt_setup(void) {
     for (int i = 0; i < 256; i++) {
@@ -98,11 +100,14 @@ void idt_setup(void) {
         idt[i].ist = 0; // TODO: maybe implement ist stuff in here
         if (i == 0x80) {
             idt[i].flags = 0xEE;
+            idt[i].offset_low = (uint64_t)legacy_syscall_handler & 0xFFFF;
+            idt[i].offset_mid = ((uint64_t)legacy_syscall_handler >> 16) & 0xFFFF;
+            idt[i].offset_high = ((uint64_t)legacy_syscall_handler >> 32) & 0xFFFFFFFF;
         } else {
             idt[i].flags = 0x8E;
+            idt[i].offset_mid = (addr >> 16) & 0xFFFF;
+            idt[i].offset_high = (addr >> 32) & 0xFFFFFFFF;
         }
-        idt[i].offset_mid = (addr >> 16) & 0xFFFF;
-        idt[i].offset_high = (addr >> 32) & 0xFFFFFFFF;
     }
 }
 

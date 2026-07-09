@@ -1,5 +1,6 @@
 #include "arch/interrupts/apic.h"
 #include "arch/interrupts/irq.h"
+#include "arch/syscall.h"
 #include "dev/bus.h"
 #include "dev/pci.h"
 #include "fs/initrd/cpio.h"
@@ -284,7 +285,7 @@ void kmain(void) {
 
     fs_list("/", 10);
 
-    register_interrupt(0x80, int80_test, NULL);
+    setup_syscall();
 
     spawn_test_tasks();
 

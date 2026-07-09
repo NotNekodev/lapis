@@ -6,5 +6,5 @@ usermode_test_entry:
 .loop:
     inc rax
     pause
-    int 0x80
+    syscall
     jmp .loop

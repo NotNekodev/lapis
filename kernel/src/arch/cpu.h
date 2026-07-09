@@ -29,6 +29,9 @@ typedef struct cpu {
 	uint32_t id;
 	uint32_t lapic_id; // they should not be different, but they can be? idk qwq
 
+	uint64_t sysret_user_rsp;
+	uint64_t sysret_kernel_rsp;
+
 	uint64_t gdt[5];
 	ist_t tss;
 	isr_t isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
@@ -40,6 +43,11 @@ typedef struct cpu {
 	volatile uint8_t need_resched;
 	volatile uint8_t in_sched;
 } cpu_t;
+
+#define _cpuid(leaf, subleaf, a, b, c, d) \
+	__asm__ volatile ("cpuid" \
+					  : "=a"(a), "=b"(b), "=c"(c), "=d"(d) \
+					  : "a"(leaf), "c"(subleaf))
 
 cpu_t *get_bsp(void);
 

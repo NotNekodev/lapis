@@ -1,3 +1,4 @@
+#include "mm/kheap.h"
 #include <arch/smp.h>
 
 #include <arch/cpu.h>
@@ -25,6 +26,8 @@ static struct limine_mp_response *mp_response;
 static uint32_t cpu_count;
 static volatile uint32_t cpu_started_count;
 
+static char bsp_sysret_kernel_stack[4 * 4096];
+
 void init_bsp_cpu(void) {
     bsp_cpu_ptr = &cpu_list[0];
     for (uint32_t i = 0; i < cpu_count; ++i) {
@@ -33,6 +36,9 @@ void init_bsp_cpu(void) {
             break;
         }
     }
+
+    bsp_cpu_ptr->sysret_kernel_rsp = (uint64_t)bsp_sysret_kernel_stack + sizeof(bsp_sysret_kernel_stack);
+    bsp_cpu_ptr->sysret_user_rsp = 0x0;
 
     cpu_set_current(bsp_cpu_ptr);
 }
@@ -74,6 +80,8 @@ void smp_prepare(void) {
         cpu->self = cpu;
         cpu->id = info->processor_id;
         cpu->lapic_id = info->lapic_id;
+        cpu->sysret_kernel_rsp = (uint64_t)kmalloc(4 * 4096) + 4 * 4096;
+        cpu->sysret_user_rsp = 0x0;
         info->extra_argument = (uint64_t)cpu;
     }
 

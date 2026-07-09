@@ -9,9 +9,9 @@ static uint64_t template[7] = {
 	0, // NULL 0x0
 	0x00af9b000000ffff, // code64 0x8
 	0x00af93000000ffff, // data64 0x10
-	0x00eff3000000ffff, // udata64 0x18
+	0x00eff3000000ffff, // udata64 0x1b
 	0x00affb000000ffff, // ucode64 0x20
-    0x0000890000000000, // tss low 0x28
+    0x0000890000000000, // tss low 0x2b
 	0x0000000000000000, // tss high 0x30
 };
 
