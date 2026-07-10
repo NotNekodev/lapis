@@ -1,3 +1,6 @@
+#include "arch/gdt/gdt.h"
+#include "kernel.h"
+#include "mm/paging.h"
 #include <arch/interrupts/idt.h>
 
 #include <arch/cpu.h>
@@ -64,6 +67,54 @@ void register_dump(int log_level, context_t *ctx) {
 	log(log_level, "Special Registers:\n");
 	log(log_level, "  RIP=0x%016llx RSP=0x%016llx RBP=0x%016llx RDI=0x%016llx\n", ctx->rip, ctx->rsp, ctx->rbp, ctx->rdi);
 	log(log_level, "  RSI=0x%016llx CR2=0x%016llx ERROR=0x%016llx VECTOR=0x%016llx\n", ctx->rsi, ctx->cr2, ctx->error, ctx->irq);
+
+	// general protection fault
+	if (ctx->irq == 0xd) {
+	    cpu_t *cpu = get_current_cpu();
+		log(log_level, "#GPF information:\n");
+		log(log_level, "  GDT:\n");
+		gdtr_t gdtr;
+		__asm__ volatile("sgdt %0" : "=m"(gdtr));
+
+		log(log_level, "    GDTR base=%016llx limit=%04x\n", gdtr.address, gdtr.size);
+
+		log(log_level, "    GDT[0] = %016llx\n", cpu->gdt[0]);
+		log(log_level, "    GDT[1] = %016llx\n", cpu->gdt[1]);
+		log(log_level, "    GDT[2] = %016llx\n", cpu->gdt[2]);
+		log(log_level, "    GDT[3] = %016llx\n", cpu->gdt[3]);
+		log(log_level, "    GDT[4] = %016llx\n", cpu->gdt[4]);
+		log(log_level, "    GDT[5] = %016llx\n", cpu->gdt[5]);
+		log(log_level, "    GDT[6] = %016llx\n", cpu->gdt[6]);
+
+	    log(log_level, "  TSS:\n");
+		uint16_t tr;
+		__asm__ volatile("str %0" : "=r"(tr));
+		log(log_level, "    TR=%04x\n", tr);
+		log(log_level, "    TRSP0 = %016llx\n", cpu->tss.rsp0);
+		log(log_level, "    TRSP1 = %016llx\n", cpu->tss.rsp1);
+		log(log_level, "    TRSP2 = %016llx\n", cpu->tss.rsp2);
+		log(log_level, "    TIST1 = %016llx\n", cpu->tss.ist1);
+		log(log_level, "    TIST2 = %016llx\n", cpu->tss.ist2);
+		log(log_level, "    TIST3 = %016llx\n", cpu->tss.ist3);
+		log(log_level, "    TIST4 = %016llx\n", cpu->tss.ist4);
+		log(log_level, "    TIST5 = %016llx\n", cpu->tss.ist5);
+		log(log_level, "    TIST6 = %016llx\n", cpu->tss.ist6);
+		log(log_level, "    TIST7 = %016llx\n", cpu->tss.ist7);
+		log(log_level, "    IOPB = %04x\n", cpu->tss.iopb);
+
+		if (ctx->error != 0) {
+			log(log_level, "  Faulting Segment: %04x\n", ctx->error);
+		}
+	}
+}
+
+void dump_iret_frame(uint64_t *f) {
+    debug("IRET:\n");
+    debug(" RIP    = %016llx\n", f[0]);
+    debug(" CS     = %016llx\n", f[1]);
+    debug(" RFLAGS = %016llx\n", f[2]);
+    debug(" RSP    = %016llx\n", f[3]);
+    debug(" SS     = %016llx\n", f[4]);
 }
 
 void stack_trace(int log_level, context_t *ctx) {
@@ -80,7 +131,8 @@ void stack_trace(int log_level, context_t *ctx) {
 
 	log(log_level, "Stack trace:\n");
 	for (int i = 0; i < 16; i++) {
-		if (rbp == NULL || (uintptr_t)rbp < 0x1000) {
+        uint64_t rbp_pflags = get_pflags(kernel_info.kernel_pt, (uintptr_t)rbp);
+		if (rbp == NULL || (uintptr_t)rbp < 0x1000 || !(rbp_pflags & PFLAG_PRESENT)) {
 			break;
 		}
 		uint64_t ret_addr = *(rbp + 1);

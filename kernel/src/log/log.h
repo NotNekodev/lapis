@@ -14,7 +14,7 @@
 #define LOG_LABEL_WARN_PREFIX  "\033[1;33mwarn\033[0m: ", 17
 #define LOG_LABEL_ERROR_PREFIX "\033[1;31merr\033[0m:  ", 17
 
-#define LOG_LABEL_CRIT_PREFIX "\033[1;31mcrit: ", 12
+#define LOG_LABEL_CRIT_PREFIX "\033[1;31mcrit:  ", 13
 #define LOG_LABEL_CRIT_SUFFIX "\033[0m", 4
 
 #define debug(format, ...)      log(LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)

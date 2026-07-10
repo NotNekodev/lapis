@@ -8,11 +8,11 @@
 
 // TODO: do something with this qwq
 typedef struct ist {
-	uint32_t reserved;
+	uint32_t reserved0;
 	uint64_t rsp0;
 	uint64_t rsp1;
 	uint64_t rsp2;
-	uint64_t reserved2;
+	uint64_t reserved1;
 	uint64_t ist1;
 	uint64_t ist2;
 	uint64_t ist3;
@@ -20,7 +20,7 @@ typedef struct ist {
 	uint64_t ist5;
 	uint64_t ist6;
 	uint64_t ist7;
-	uint32_t reserved3[3];
+	uint64_t reserved2;
 	uint32_t iopb;
 } __attribute__((packed)) ist_t;
 
@@ -32,7 +32,7 @@ typedef struct cpu {
 	uint64_t sysret_user_rsp;
 	uint64_t sysret_kernel_rsp;
 
-	uint64_t gdt[5];
+	uint64_t gdt[7];
 	ist_t tss;
 	isr_t isr[256]; // max amount of interrupts on x86_64, WHICH IS WHAT WE ARE TARGETING!!
 

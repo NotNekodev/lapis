@@ -333,7 +333,7 @@ static void switch_address_space(thread_t *next) {
 
 static void switch_tss(thread_t *next) {
     cpu_t *cpu = get_current_cpu();
-    cpu->tss.rsp0 = (uint64_t)next->kstack_base + next->kstack_size;
+        cpu->tss.rsp0 = (uint64_t)next->kstack_base + next->kstack_size;
 }
 
 static void do_switch(thread_t *prev, thread_t *next) {

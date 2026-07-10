@@ -3,6 +3,8 @@ bits 64
 %assign i 0
 %rep 256
 
+extern dump_iret_frame
+
 isr_%+ i:
     %if i <> 8 && i <> 10 && i <> 11 && i <> 12 && i <> 13 && i <> 14
         push qword 0
@@ -26,6 +28,7 @@ isr_common:
     push r14
     push r13
     push r12
+    push r11
     push r10
     push r9
     push r8
@@ -35,8 +38,6 @@ isr_common:
     push rax
     mov rax, ds
     push rax
-	mov rax, ds
-	push rax
 	mov rax, es
 	push rax
 	mov rax, fs
@@ -63,6 +64,7 @@ isr_common:
 	push qword 0
 	.keep_going:
 	mov rbp, rsp
+
     cld ; yes sasdallas, i did it :face_holding_back_tears:
 	extern interrupt_isr
 	call interrupt_isr
@@ -97,6 +99,9 @@ isr_resume_from_context:
     cmp qword [rsp+8], 0x8
 	je .notneeded2
 	.notneeded2:
+
+	mov rdi, rsp
+	call dump_iret_frame
 	o64 iret
 
 global _lidt

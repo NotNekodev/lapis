@@ -26,7 +26,7 @@ static struct limine_mp_response *mp_response;
 static uint32_t cpu_count;
 static volatile uint32_t cpu_started_count;
 
-static char bsp_sysret_kernel_stack[4 * 4096];
+static char bsp_sysret_kernel_stack[16 * 4096];
 
 void init_bsp_cpu(void) {
     bsp_cpu_ptr = &cpu_list[0];

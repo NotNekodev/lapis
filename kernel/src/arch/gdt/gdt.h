@@ -27,7 +27,7 @@ typedef struct tss_desc {
 #define GDT_SEL_TSS 0x28
 
 void gdt_reload(void);
-void gdt_set_tss(void *tss, uint32_t size);
+void gdt_set_tss(void *tss);
 void _lgdt(void *ptr);
 void _ltr(uint8_t sel);
 void _reload_segs(void);

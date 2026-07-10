@@ -11,32 +11,32 @@ static uint64_t template[7] = {
 	0x00af93000000ffff, // data64 0x10
 	0x00eff3000000ffff, // udata64 0x1b
 	0x00affb000000ffff, // ucode64 0x20
-    0x0000890000000000, // tss low 0x2b
+    0x0020890000000000, // tss low 0x2b
 	0x0000000000000000, // tss high 0x30
 };
 
-void gdt_set_tss(void *tss, uint32_t size) {
-    uint64_t base = (uint64_t)tss;
-    uint64_t limit = size - 1;
+void gdt_set_tss(void *tss) {
+    uintptr_t base = (uintptr_t)tss;
+    uint32_t limit = sizeof(ist_t) - 1;
 
     uint64_t low = 0;
-    low |= (limit & 0xFFFF);
-    low |= (base & 0xFFFFFF) << 16;
-    low |= (uint64_t)0x89 << 40;
-    low |= ((limit >> 16) & 0xF) << 48;
-    low |= ((base >> 24) & 0xFF) << 56;
 
-    uint64_t high = (base >> 32) & 0xFFFFFFFF;
+    low |= (limit & 0xffff);
+    low |= (base & 0xffff) << 16;
+    low |= ((base >> 16) & 0xff) << 32;
+    low |= (0x89ULL) << 40;
+    low |= ((limit >> 16) & 0xf) << 48;
+    low |= ((base >> 24) & 0xff) << 56;
 
     get_current_cpu()->gdt[5] = low;
-    get_current_cpu()->gdt[6] = high;
+    get_current_cpu()->gdt[6] = base >> 32;
 }
 
 void gdt_reload(void) {
     cpu_t *cpu = get_current_cpu();
     memcpy(cpu->gdt, template, sizeof(template));
     memset(&cpu->tss, 0, sizeof(cpu->tss));
-    gdt_set_tss(&cpu->tss, sizeof(cpu->tss));
+    gdt_set_tss(&cpu->tss);
 
     gdtr_t gdtr = {
         .size = sizeof(template) - 1,

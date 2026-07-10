@@ -20,7 +20,7 @@ typedef struct syscall_frame {
 	uint64_t rflags;
 	uint64_t rsp;
 	uint64_t ss;
-} syscall_frame_t;
+} __attribute__((packed)) syscall_frame_t;
 
 void setup_syscall(void);
 
