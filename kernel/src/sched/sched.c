@@ -350,6 +350,7 @@ static void do_switch(thread_t *prev, thread_t *next) {
     switch_address_space(next);
     switch_tss(next);
 
+    cpu->sysret_kernel_rsp = next->kernel_rsp;
     context_switch(&prev->kernel_rsp, next->kernel_rsp);
 }
 

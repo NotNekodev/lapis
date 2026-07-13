@@ -37,7 +37,7 @@ void init_bsp_cpu(void) {
         }
     }
 
-    bsp_cpu_ptr->sysret_kernel_rsp = (uint64_t)bsp_sysret_kernel_stack + sizeof(bsp_sysret_kernel_stack);
+    bsp_cpu_ptr->sysret_kernel_rsp = 0x0;
     bsp_cpu_ptr->sysret_user_rsp = 0x0;
 
     cpu_set_current(bsp_cpu_ptr);
@@ -80,7 +80,7 @@ void smp_prepare(void) {
         cpu->self = cpu;
         cpu->id = info->processor_id;
         cpu->lapic_id = info->lapic_id;
-        cpu->sysret_kernel_rsp = (uint64_t)kmalloc(4 * 4096) + 4 * 4096;
+        cpu->sysret_kernel_rsp = 0x0;
         cpu->sysret_user_rsp = 0x0;
         info->extra_argument = (uint64_t)cpu;
     }
