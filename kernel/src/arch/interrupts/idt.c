@@ -1,7 +1,6 @@
 #include "arch/gdt/gdt.h"
 #include "kernel.h"
 #include "mm/paging.h"
-#include "sched/waitqueue.h"
 #include <arch/interrupts/idt.h>
 
 #include <arch/cpu.h>

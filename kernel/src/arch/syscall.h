@@ -1,8 +1,7 @@
 #ifndef _SYSCALL_H
 #define _SYSCALL_H 1
 
-#include "arch/interrupts/isr.h"
-#include "arch/io.h"
+#include <stdint.h>
 
 typedef struct syscall_frame {
     uint64_t r11;

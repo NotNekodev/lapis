@@ -17,4 +17,5 @@ usermode_enter:
     push qword 0x23
     push rax
 
+    swapgs
     o64 iret

@@ -21,6 +21,7 @@ isr_%+ i:
 isr_common:
     cmp qword [rsp+24], 0x8
     je .notneeded1
+    swapgs
     .notneeded1:
     push rbp ; irq num, remember :^)
     push rsi
@@ -90,8 +91,8 @@ isr_resume_from_context:
 
     cmp qword [rsp+8], 0x8
 	je .notneeded2
+	swapgs
 	.notneeded2:
-
 	o64 iret
 
 global _lidt
