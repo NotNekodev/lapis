@@ -129,16 +129,6 @@ void int80_test(isr_t *isr, context_t *ctx) {
 }
 
 static void spawn_test_tasks(void) {
-    proc_t *kproc_a = proc_create_kernel("test-a");
-    thread_t *ta = thread_create(kproc_a, kernel_test_thread, (void *)"A", THREAD_CREATE_KERNEL);
-    ta->state = THREAD_READY;
-    sched_enqueue(ta);
-
-    proc_t *kproc_b = proc_create_kernel("test-b");
-    thread_t *tb = thread_create(kproc_b, kernel_test_thread, (void *)"B", THREAD_CREATE_KERNEL);
-    tb->state = THREAD_READY;
-    sched_enqueue(tb);
-
     proc_t *uproc = proc_create_kernel("test-user");
     uproc->flags |= PROC_FLAG_USER;
     uproc->vmm = vmm_create();

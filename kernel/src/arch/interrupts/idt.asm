@@ -4,6 +4,7 @@ bits 64
 %rep 256
 
 extern dump_iret_frame
+extern dump_current_thread_kstack
 
 isr_%+ i:
     %if i <> 8 && i <> 10 && i <> 11 && i <> 12 && i <> 13 && i <> 14
@@ -54,15 +55,6 @@ isr_common:
     mov rdi, rbp
     mov rsi, rsp
 
-    cmp qword [rsp + 184], 0x8
-	jne .zero_frame
-	push qword [rsp + 176]
-	push qword [rsp + 168]
-	jmp .keep_going
-	.zero_frame:
-	push qword 0
-	push qword 0
-	.keep_going:
 	mov rbp, rsp
 
     cld ; yes sasdallas, i did it :face_holding_back_tears:
@@ -73,7 +65,7 @@ isr_common:
 
 global isr_resume_from_context
 isr_resume_from_context:
-    add rsp, 40 ; remove cr2, gs and fs
+    add rsp, 24 ; remove cr2, gs and fs
     pop rax
 	mov es, rax
 	pop rax
@@ -100,8 +92,6 @@ isr_resume_from_context:
 	je .notneeded2
 	.notneeded2:
 
-	mov rdi, rsp
-	call dump_iret_frame
 	o64 iret
 
 global _lidt

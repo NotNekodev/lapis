@@ -1,13 +1,9 @@
 #include "syscall.h"
-#include "arch/interrupts/isr.h"
-#include "arch/io.h"
 
 #include <log/log.h>
 #include <arch/cpu.h>
 
 void setup_syscall(void) {
-    //register_interrupt(0x80, legacy_syscall_interrupt, NULL);
-
     uint32_t eax, ebx, ecx, edx;
 
     _cpuid(0x80000000, 0, eax, ebx, ecx, edx);
@@ -16,6 +12,8 @@ void setup_syscall(void) {
         _cpuid(0x80000001, 0, eax, ebx, ecx, edx);
 
         if (edx & (1u << 11)) {
+            // TODO: fix context switch bug from july 2026 and implement sysret correctly
+            /*
             debug("syscall/sysret supported! registering syscall handler\n");
 
             uint64_t efer = _rdmsr(0xC0000080);
@@ -31,6 +29,7 @@ void setup_syscall(void) {
 
             // write FMASK
             _wrmsr(0xC0000084, (1 << 9)); // clear IF
+            */
         } else {
             warn("syscall/sysret not cpuid subleaf not available!\n");
         }

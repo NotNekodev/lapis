@@ -350,7 +350,7 @@ static void do_switch(thread_t *prev, thread_t *next) {
     switch_address_space(next);
     switch_tss(next);
 
-    cpu->sysret_kernel_rsp = next->kernel_rsp;
+    cpu->sysret_kernel_rsp = (uint64_t)next->kstack_base + next->kstack_size;
     context_switch(&prev->kernel_rsp, next->kernel_rsp);
 }
 

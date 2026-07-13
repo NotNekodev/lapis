@@ -1,6 +1,7 @@
 #include "arch/gdt/gdt.h"
 #include "kernel.h"
 #include "mm/paging.h"
+#include "sched/waitqueue.h"
 #include <arch/interrupts/idt.h>
 
 #include <arch/cpu.h>
@@ -106,15 +107,6 @@ void register_dump(int log_level, context_t *ctx) {
 			log(log_level, "  Faulting Segment: %04x\n", ctx->error);
 		}
 	}
-}
-
-void dump_iret_frame(uint64_t *f) {
-    debug("IRET:\n");
-    debug(" RIP    = %016llx\n", f[0]);
-    debug(" CS     = %016llx\n", f[1]);
-    debug(" RFLAGS = %016llx\n", f[2]);
-    debug(" RSP    = %016llx\n", f[3]);
-    debug(" SS     = %016llx\n", f[4]);
 }
 
 void stack_trace(int log_level, context_t *ctx) {
