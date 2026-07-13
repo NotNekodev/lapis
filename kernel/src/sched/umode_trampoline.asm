@@ -7,7 +7,7 @@ usermode_enter:
 
     cli
 
-    mov rdi, 0x18 | 0x3
+    mov rdi, 0x1b
     mov es, di
     mov ds, di
 
